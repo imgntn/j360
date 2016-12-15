@@ -24,9 +24,9 @@ function capture360(event) {
 var scene, camera, renderer;
 var meshes = [];
 var controls;
+var locationNames = ['top', 'bottom', 'left', 'right', 'front', 'behind'];
 
-init();
-animate();
+
 
 function init() {
 
@@ -50,33 +50,42 @@ function init() {
 
 }
 
+
 function placeObjectsAroundYou() {
 
-    var above = new THREE.Vector3(0, 50, 0);
-    var below = new THREE.Vector3(0, -50, 0);
-    var left = new THREE.Vector3(50, 0, 0);
-    var right = new THREE.Vector3(-50, 0, 0);
+    var top = new THREE.Vector3(0, 50, 0);
+    var bottom = new THREE.Vector3(0, -50, 0);
+    var left = new THREE.Vector3(-50, 0, 0);
+    var right = new THREE.Vector3(50, 0, 0);
     var front = new THREE.Vector3(0, 0, 50);
     var behind = new THREE.Vector3(0, 0, -50);
 
-    var locations = [above, below, left, right, front, behind];
+    var locations = [top, bottom, left, right,behind, front, ];
 
-    locations.forEach(function(location) {
-        makeSingleObject(location);
-    })
+
+
+    var i;
+    for(i=0;i<locations.length;i++){
+        makeSingleObject(locations[i],i);
+    }
 
 }
 
-function makeSingleObject(location) {
+function makeSingleObject(location,index) {
     geometry = new THREE.SphereGeometry(25, 40, 40);
 
-    var map = new THREE.TextureLoader().load('uvgrid01.jpg');
+    var map = new THREE.TextureLoader().load(locationNames[index]+'.png');
     map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.repeat.set( 8, 8 );
     map.anisotropy = 16;
+
     var material = new THREE.MeshLambertMaterial({
         map: map,
         side: THREE.DoubleSide
     });
+
+    // var material = useShaderMaterial();
+    
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.add(location)
@@ -91,8 +100,8 @@ function animate(delta) {
 
 
     meshes.forEach(function(mesh) {
-        mesh.rotation.x += 0.01;
-        mesh.rotation.y += 0.02;
+       // mesh.rotation.x += 0.005;
+        mesh.rotation.y += 0.001;
     })
 
     controls.update(delta);
@@ -111,3 +120,38 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+
+function useShaderMaterial() {
+
+
+    image = document.createElement('img');
+    image.src = "uvgrid01.jpg";
+    document.body.appendChild(image);
+
+    var texture = new THREE.Texture(image);
+    image.addEventListener('load', function(event) {
+        texture.needsUpdate = true;
+    });
+
+    var uniforms = {
+        "texture": {
+            type: "t",
+            value: texture
+        }
+    };
+
+    var material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: document.getElementById('vertex_shader').textContent,
+        fragmentShader: document.getElementById('fragment_shader').textContent
+    });
+
+
+    return material
+}
+
+
+
+init();
+animate();
