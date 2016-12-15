@@ -74,7 +74,7 @@ function placeObjectsAroundYou() {
 function makeSingleObject(location,index) {
     geometry = new THREE.SphereGeometry(25, 40, 40);
 
-    var map = new THREE.TextureLoader().load('/'+locationNames[index]+'.png');
+    var map = new THREE.TextureLoader().load(locationNames[index]+'.png');
     map.wrapS = map.wrapT = THREE.RepeatWrapping;
     map.repeat.set( 8, 8 );
     map.anisotropy = 16;
