@@ -1,5 +1,5 @@
-
 [example 4k video on YouTube ](https://www.youtube.com/watch?v=GcY7f8EYEQg)
+
 This project shows how to export 4K resolution 360 Videos and Photos from inside of Three.js scenes.
 
 [Part of a process described in this blog post](https://medium.com/p/788226f2c75f)
