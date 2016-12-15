@@ -6,9 +6,7 @@ Part of a process described at https://medium.com/p/788226f2c75f
 
 Basically you take a cube camera, save it to equirectangular photo, and then stitch those together to make a video.  Add some metadata and voila! 
 
-I have modified several of the libraries here to support taking 360 photos:
-CCapture.js
-CupemapToEquirectangular.js
+I made some minor modifications to the CCapture.js library, where I added a CC360Encoder class that calls into an cubemap to equirectangular image capture library from the same author. I made small modifications to that library also, where I prepare the cube camera data for the encoder with the preBlob class.
 
 Tested on Chrome, Windows x64
 
