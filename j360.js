@@ -1,31 +1,22 @@
 // Create a capturer that exports Equirectangular 360 PNG images in a TAR file
 var capturer360 = new CCapture({
     format: 'threesixty',
-    verbose: true,
+    verbose: false,
     display: true,
 });
 
 
 function startCapture360(event) {
-    console.log('should start capture')
     capturer360.start();
 }
 
-function stopCapture360(event) {
-    console.log('should stop capture')
-    capturer360.stop();
-}
-
-
 function saveCapture360(event) {
-    console.log('should save capture')
 
     capturer360.stop();
     capturer360.save();
 }
 
 function capture360(event) {
-    console.log('should capture 360 ');
     return equiManaged.update(camera, scene);
 }
 
@@ -109,4 +100,14 @@ function animate(delta) {
     renderer.render(scene, camera);
     capturer360.capture(canvas);
 
+}
+
+
+window.addEventListener('resize', onWindowResize, false);
+
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }

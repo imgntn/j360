@@ -1,8 +1,8 @@
-https://imgntn.github.io/j360/
 
+[example 4k video on YouTube ](https://www.youtube.com/watch?v=GcY7f8EYEQg)
 This project shows how to export 4K resolution 360 Videos and Photos from inside of Three.js scenes.
 
-Part of a process described at https://medium.com/p/788226f2c75f
+[Part of a process described in this blog post](https://medium.com/p/788226f2c75f)
 
 Basically you take a cube camera, save it to equirectangular photo, and then stitch those together to make a video.  Add some metadata and voila! 
 
@@ -10,3 +10,4 @@ I made some minor modifications to the CCapture.js library, where I added a CC36
 
 Tested on Chrome, Windows x64
 
+[Try it in a browser -- you'll still have to add metadata (see the blog post)](https://imgntn.github.io/j360/)

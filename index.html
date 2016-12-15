@@ -1,5 +1,7 @@
 <index>
 <head>
+<title>j360</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <!-- 3d scripts section -->
 <script src="three.min.js"></script>
 
@@ -15,8 +17,15 @@
 <!-- 360 capture section -->
 <script src="CubemapToEquirectangular.js"></script>
 </head>
-<body>
+<body style="overflow:hidden;margin:0;padding:0">
+
 <div class="container"></div>
+
+<div class="buttonHolder" style="position:fixed;top:0;left:0;width:50%;height:100%;margin-left:25%;text-align:center">
+<button class="startButton" onclick="startCapture360()">Start Capture</button>
+<button class="saveButton"  onclick="saveCapture360()">Save Capture</button>
+</div>
+
 <script src="j360.js"></script>
 
 </body>
