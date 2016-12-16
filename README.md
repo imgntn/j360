@@ -1,6 +1,6 @@
 This project shows how to export 4K resolution 360 Videos and Photos from inside of Three.js scenes.
 
-The process is [described in this blog post](https://medium.com/p/788226f2c75f)
+The process is [described in this blog post](https://medium.com/p/788226f2c75f) https://medium.com/p/788226f2c75f
 
 # Examples
 
@@ -17,13 +17,13 @@ Basically you take a cube camera, save it to equirectangular photo, and then sti
 
 I made some modifications to the [CCapture.js library](https://github.com/spite/ccapture.js/), where I added a CC360Encoder class that calls into an cubemap to equirectangular image capture library [from the same author](https://github.com/spite/THREE.CubemapToEquirectangular). I made modifications to that library also, where I prepare the cube camera data for the encoder with the preBlob class.  Finally, I was running into memory issues very quickly, so I re-implemented batching in CCapture.js for the equirectangular .jpg sequences.
 
-It will capture a batch every N seconds according to the a
+It will capture a batch every N seconds, according to the autoSaveTime parameter.  Save and unarchive these .tar files, then use FFMPEG to stitch the images together.  See the blog post for more.
 
 # Try Online
 
-[demo scene](https://www.youtube.com/watch?v=nsJS0_vms5c)
+[demo scene](https://imgntn.github.io/j360/demo.html)
 
-[simple tests](https://www.youtube.com/watch?v=nsJS0_vms5c)
+[simple tests](https://imgntn.github.io/j360/index.html)
 
 
 # Setup
