@@ -75,7 +75,7 @@ function stopCapture360(event) {
 
 
 # File sizes
-In tests of a 30 second capture, I've seen a 1.66GB of 4K 360 images compress into 3.12mb of 4K 360 video.  A lot depends on how much movement there is in the scene, but the reductions are dramatic.
+In tests of a 30 second capture, I've seen a 1.66GB folder of 4K 360 images compress into a single 3.12mb  4K 360 video.  A lot depends on how much movement there is in the scene, but the reductions are dramatic.
 
 
 # Contact
