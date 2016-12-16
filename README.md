@@ -74,10 +74,16 @@ function stopCapture360(event) {
 }
 ```
 
+# Unarchive, Convert, and Add Metadata
 
-# File sizes
+Unarchive the .tar files to a single folder and then convert the whole folder of images into a movie with one FFMPEG command
+```ffmpeg -i %07d.jpg video.mp4```
+
+The “%07d” tells FFMPEG that there are 7 decimals before the “.jpg” extension in each filename. 
+
 In tests of a 30 second capture, I've seen a 1.66GB folder of 4K 360 images compress into a single 3.12mb  4K 360 video.  A lot depends on how much movement there is in the scene, but the reductions are dramatic.
 
+Then use the [Spatial Media Metadata Injector](https://github.com/google/spatial-media/releases) to add spatial metadata and upload.
 
 # Contact
 Get in touch with me on LinkedIn for custom 360 content or more versatile deployments of this software.  
