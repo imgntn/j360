@@ -1,20 +1,22 @@
 // Create a capturer that exports Equirectangular 360 PNG images in a TAR file
 var capturer360 = new CCapture({
     format: 'threesixty',
-    verbose: false,
     display: true,
+    autoSaveTime: 3,
 });
-
 
 function startCapture360(event) {
     capturer360.start();
 }
 
 function saveCapture360(event) {
-
-    capturer360.stop();
     capturer360.save();
 }
+
+function stopCapture360(event) {
+    capturer360.stop();
+}
+
 
 function capture360(event) {
     return equiManaged.update(camera, scene);
@@ -24,9 +26,7 @@ function capture360(event) {
 var scene, camera, renderer;
 var meshes = [];
 var controls;
-var locationNames = ['top', 'bottom', 'left', 'right', 'front', 'behind'];
-
-
+var locationNames = ['top', 'bottom', 'front', 'behind', 'left', 'right', ];
 
 function init() {
 
@@ -36,7 +36,7 @@ function init() {
     placeObjectsAroundYou();
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    equiManaged = new CubemapToEquirectangular(renderer, true);
+    equiManaged = new CubemapToEquirectangular(renderer, true, "4K");
     var container = document.getElementsByClassName('container')[0];
     canvas = container.appendChild(renderer.domElement);
     controls = new THREE.OrbitControls(camera, container);
@@ -53,30 +53,29 @@ function init() {
 
 function placeObjectsAroundYou() {
 
-    var top = new THREE.Vector3(0, 50, 0);
-    var bottom = new THREE.Vector3(0, -50, 0);
+    var top = new THREE.Vector3(0, 38, 0);
+    var bottom = new THREE.Vector3(0, -38, 0);
     var left = new THREE.Vector3(-50, 0, 0);
     var right = new THREE.Vector3(50, 0, 0);
     var front = new THREE.Vector3(0, 0, 50);
     var behind = new THREE.Vector3(0, 0, -50);
 
-    var locations = [top, bottom, left, right,behind, front, ];
-
-
+    var locations = [top, bottom, behind, front, left, right, ];
 
     var i;
-    for(i=0;i<locations.length;i++){
-        makeSingleObject(locations[i],i);
+    for (i = 0; i < locations.length; i++) {
+        makeSingleObject(locations[i], i);
     }
 
 }
 
-function makeSingleObject(location,index) {
+function makeSingleObject(location, index) {
     geometry = new THREE.SphereGeometry(25, 40, 40);
 
-    var map = new THREE.TextureLoader().load(locationNames[index]+'.png');
+    var map = new THREE.TextureLoader().load('textures/'+locationNames[index] + '.png');
+
     map.wrapS = map.wrapT = THREE.RepeatWrapping;
-    map.repeat.set( 8, 8 );
+    map.repeat.set(8, 8);
     map.anisotropy = 16;
 
     var material = new THREE.MeshLambertMaterial({
@@ -84,8 +83,7 @@ function makeSingleObject(location,index) {
         side: THREE.DoubleSide
     });
 
-    // var material = useShaderMaterial();
-    
+
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.add(location)
@@ -100,8 +98,8 @@ function animate(delta) {
 
 
     meshes.forEach(function(mesh) {
-       // mesh.rotation.x += 0.005;
-        mesh.rotation.y += 0.001;
+        // mesh.rotation.x += 0.005;
+        mesh.rotation.y += 0.003;
     })
 
     controls.update(delta);
@@ -120,38 +118,6 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
-
-
-function useShaderMaterial() {
-
-
-    image = document.createElement('img');
-    image.src = "uvgrid01.jpg";
-    document.body.appendChild(image);
-
-    var texture = new THREE.Texture(image);
-    image.addEventListener('load', function(event) {
-        texture.needsUpdate = true;
-    });
-
-    var uniforms = {
-        "texture": {
-            type: "t",
-            value: texture
-        }
-    };
-
-    var material = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: document.getElementById('vertex_shader').textContent,
-        fragmentShader: document.getElementById('fragment_shader').textContent
-    });
-
-
-    return material
-}
-
-
 
 init();
 animate();

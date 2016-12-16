@@ -3,19 +3,29 @@
 <title>j360</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <!-- 3d scripts section -->
-<script src="three.min.js"></script>
+<script src="js/three.min.js"></script>
 
-<script type='text/javascript' src='OrbitControls.js'></script>
+<script type='text/javascript' src='js/OrbitControls.js'></script>
 
 <!-- movie capture section -->
-<script src="CCapture.js"></script>
+<script src="js/CCapture.js"></script>
 <!-- Include tar.js if you want to export PNG or JPEG -->
-<script src="tar.js"></script>
+<script src="js/tar.js"></script>
 <!-- Include download.js for easier file download -->
-<script src="download.js"></script>
-
+<script src="js/download.js"></script>
 <!-- 360 capture section -->
-<script src="CubemapToEquirectangular.js"></script>
+<script src="js/CubemapToEquirectangular.js"></script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-89021563-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </head>
 <body style="overflow:hidden;margin:0;padding:0">
 
@@ -23,11 +33,11 @@
 
 <div class="buttonHolder" style="position:relative;text-align:center;">
 <button class="startButton" onclick="startCapture360()">Start Capture</button>
-<button class="saveButton"  onclick="saveCapture360()">Save Capture</button>
+<button class="saveButton"  onclick="stopCapture360()">Stop Capture</button>
 </div>
 
 
-<script src="j360.js"></script>
+<script src="js/j360.js"></script>
 
 </body>
 </index>

@@ -1,4 +1,6 @@
-function CubemapToEquirectangular(renderer, provideCubeCamera) {
+function CubemapToEquirectangular(renderer, provideCubeCamera, resolution) {
+
+	var resolution = resolution.toUpperCase() || "2K";
 
 	this.width = 1;
 	this.height = 1;
@@ -31,14 +33,36 @@ function CubemapToEquirectangular(renderer, provideCubeCamera) {
 	this.cubeCamera = null;
 	this.attachedCamera = null;
 
-	//4k resolution.  awesome!!
-	this.setSize(4096, 2048);
+
+	if (resolution === "4K") {
+		this.setSize(4096, 2048);
+	}
+
+	if (resolution === "2K") {
+		this.setSize(2048, 1024);
+	}
+
+	if (resolution === "1K") {
+		this.setSize(1024, 512);
+	}
+
 
 	var gl = this.renderer.getContext();
 	this.cubeMapSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE)
 
 	if (provideCubeCamera) {
-		this.getCubeCamera(2048)
+
+		if (resolution === "4K") {
+			this.getCubeCamera(2048);
+		}
+
+		if (resolution === "2K") {
+			this.getCubeCamera(1024);
+		}
+
+		if (resolution === "1K") {
+			this.getCubeCamera(512);
+		}
 	}
 
 }
@@ -164,31 +188,6 @@ CubemapToEquirectangular.prototype.convert = function(cubeCamera) {
 
 }
 
-CubemapToEquirectangular.prototype.convertToDisk = function(cubeCamera) {
-
-	this.quad.material.uniforms.map.value = cubeCamera.renderTarget.texture;
-	this.renderer.render(this.scene, this.camera, this.output, true);
-
-	var pixels = new Uint8Array(4 * this.width * this.height);
-	this.renderer.readRenderTargetPixels(this.output, 0, 0, this.width, this.height, pixels);
-
-	var imageData = new ImageData(new Uint8ClampedArray(pixels), this.width, this.height);
-
-	this.ctx.putImageData(imageData, 0, 0);
-
-	var fileName = 'pano-' + document.title + '-' + Date.now() + '.jpg';
-	var dataurl = this.canvas.toDataURL();
-	dataurl = dataurl.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
-
-	var folderName = "EquirectangularSequence/"
-	require("fs").writeFile(folderName + fileName, dataurl, {
-		encoding: 'base64'
-	}, function(err) {
-		console.log(err);
-	});
-
-}
-
 CubemapToEquirectangular.prototype.preBlob = function(cubeCamera) {
 
 	var autoClear = this.renderer.autoClear;
@@ -208,7 +207,6 @@ CubemapToEquirectangular.prototype.preBlob = function(cubeCamera) {
 	this.ctx.putImageData(imageData, 0, 0);
 
 }
-
 
 
 CubemapToEquirectangular.prototype.update = function(camera, scene) {

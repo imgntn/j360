@@ -172,9 +172,13 @@
         this.fileExtension = '';
 
         this.tape = null
-        this.count = 0;
 
+        this.baseFilename = 'j360';
+        this.count = 0;
     }
+
+    var globalChunkCount = 0;
+    var globalPartCount = 0;
 
     CCTarEncoder.prototype = Object.create(CCFrameEncoder.prototype);
 
@@ -188,15 +192,23 @@
 
         var fileReader = new FileReader();
         fileReader.onload = function() {
-            this.tape.append(pad(this.count) + this.fileExtension, new Uint8Array(fileReader.result));
-
-            //if( this.settings.autoSaveTime > 0 && ( this.frames.length / this.settings.framerate ) >= this.settings.autoSaveTime ) {
-
-            this.count++;
-            this.step();
+            this.tape.append(pad(globalChunkCount) + this.fileExtension, new Uint8Array(fileReader.result));
+            if (this.settings.autoSaveTime > 0 && (this.count / this.settings.framerate) >= this.settings.autoSaveTime) {
+                this.save(function(blob) {
+                    this.filename = this.baseFilename + '_part_' + pad(globalPartCount);
+                    download(blob, this.filename + this.extension, this.mimeType);
+                    globalPartCount++;
+                    globalChunkCount++;
+                    this.dispose();
+                    this.step();
+                }.bind(this))
+            } else {
+                globalChunkCount++;
+                this.count++;
+                this.step();
+            }
         }.bind(this);
         fileReader.readAsArrayBuffer(blob);
-
     }
 
     CCTarEncoder.prototype.save = function(callback) {
@@ -245,6 +257,8 @@
         this.type = 'image/jpeg';
         this.fileExtension = '.jpg';
         this.quality = (settings.quality / 100) || 1;
+
+
 
     }
 
@@ -606,10 +620,10 @@
             _capturing = false,
             _handlers = {};
 
-        _settings.framerate = _settings.framerate || 60;
+        _settings.framerate = _settings.framerate || 25;
         _settings.motionBlurFrames = 2 * (_settings.motionBlurFrames || 1);
         _verbose = _settings.verbose || false;
-        _display = _settings.display || false;
+        _display = _settings.display || true;
         _settings.step = 1000.0 / _settings.framerate;
         _settings.timeLimit = _settings.timeLimit || 0;
         _settings.frameLimit = _settings.frameLimit || 0;
@@ -620,7 +634,7 @@
         _timeDisplay.style.left = _timeDisplay.style.top = 0
         _timeDisplay.style.backgroundColor = 'black';
         _timeDisplay.style.fontFamily = 'monospace'
-        _timeDisplay.style.fontSize = '11px'
+        _timeDisplay.style.fontSize = '16px'
         _timeDisplay.style.padding = '5px'
         _timeDisplay.style.color = 'red';
         _timeDisplay.style.zIndex = 100000
