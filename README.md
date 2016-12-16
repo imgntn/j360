@@ -15,9 +15,9 @@ The process is described in this blog post: https://medium.com/p/788226f2c75f
 # How this works
 Basically you take a cube camera, save it to equirectangular photo, and then stitch those together to make a video.  Add some metadata and voila! You can then post them to Facebook and Youtube.
 
-I made some modifications to the [CCapture.js library](https://github.com/spite/ccapture.js/), where I added a CC360Encoder class that calls into an cubemap to equirectangular image capture library [from the same author](https://github.com/spite/THREE.CubemapToEquirectangular). I made modifications to that library also, where I prepare the cube camera data for the encoder with the preBlob class.  Finally, I was running into memory issues very quickly, so I re-implemented batching in CCapture.js for the equirectangular .jpg sequences.
+I made some modifications to the [CCapture.js library](https://github.com/spite/ccapture.js/), where I added a CC360Encoder class that calls into an cubemap to equirectangular image capture library [from the same author](https://github.com/spite/THREE.CubemapToEquirectangular). I made modifications to that library also, where I prepare the cube camera data for the encoder with the preBlob class.  Finally, I was running into memory issues very quickly, so I re-implemented the broken batching in CCapture.js for .jpg sequences.
 
-It will capture a batch every N seconds, according to the autoSaveTime parameter.  Save and unarchive these .tar files, then use FFMPEG to stitch the images together.  See the post on Medium for more about metadata.
+The app will capture a batch every N seconds, according to the autoSaveTime parameter.  Save and unarchive these .tar files, then use FFMPEG to stitch the images together.  See the post on Medium for more about metadata.
 
 # Try Online
 
@@ -50,12 +50,16 @@ var capturer360 = new CCapture({
 });
 ```
 
+Add a managed CubemapToEquirectangular camera when you setup your scene. Here we use “4K” but you can also use “2K” or “1K” as resolutions.
 
-Add this to the end of your render loop
+```equiManaged = new CubemapToEquirectangular(renderer, true,"4K");```
+
+
+Call the capture method at the end render loop, and give it your canvas.
 
 ```capturer360.capture(canvas); ```
 
-Call these functions to start  and stop the recording.
+These functions will start and stop the recording.
 
 ```
 function startCapture360(event) {

@@ -13,8 +13,6 @@ function stopCapture360(event) {
     capturer360.stop();
 }
 
-
-
 var scene, camera, renderer;
 var meshes = [];
 var controls;

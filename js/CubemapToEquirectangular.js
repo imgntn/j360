@@ -1,6 +1,6 @@
 function CubemapToEquirectangular(renderer, provideCubeCamera, resolution) {
 
-	var resolution = resolution.toUpperCase() || "2K";
+	var resolution = resolution.toUpperCase() || "4K";
 
 	this.width = 1;
 	this.height = 1;
