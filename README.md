@@ -6,7 +6,7 @@ The process is [described in this blog post](https://medium.com/p/788226f2c75f)
 
 [example 4k video from demo scene on YouTube ](https://www.youtube.com/watch?v=nsJS0_vms5c)
 
-![Alt text](screencap2.jpg?raw=true "Inside of a 3d environment")
+![Alt text](screencap2.jpg?raw=true "Inside of a 3D environment")
 
 [example 4k test video on YouTube ](https://www.youtube.com/watch?v=GcY7f8EYEQg)
 
@@ -30,5 +30,6 @@ It will capture a batch every N seconds according to the a
 
 Clone the repository and serve its files using a webserver of your choice.
 
-index.html: simple test shapes.  moving the camera during capture has no effect.
-demo.html: hacked into a three.js demo scene.  moving the camera during capture will affect the final shot.
+index.html contains simple test shapes.  moving the camera during capture has no effect.
+
+demo.html is hacked into a three.js demo scene.  moving the camera during capture will change the final shot.
