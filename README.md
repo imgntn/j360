@@ -30,9 +30,10 @@ The app will capture a batch every N seconds, according to the autoSaveTime para
 
 Clone the repository and serve its files using a webserver of your choice.
 
-index.html contains simple test shapes.  moving the camera during capture has no effect.
 
-demo.html is hacked into a three.js demo scene.  moving the camera during capture will change the final shot.
+[index.html](index.html) contains simple test shapes.  moving the camera during capture has no effect.
+
+[demo.html](demo.html) is hacked into a three.js demo scene.  moving the camera during capture will change the final shot.
 
 
 # Use it yourself
