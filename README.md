@@ -77,6 +77,7 @@ function stopCapture360(event) {
 # Unarchive, Convert, and Add Metadata
 
 Unarchive the .tar files to a single folder and then convert the whole folder of images into a movie with one FFMPEG command
+
 ```ffmpeg -i %07d.jpg video.mp4```
 
 The “%07d” tells FFMPEG that there are 7 decimals before the “.jpg” extension in each filename. 
