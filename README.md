@@ -26,7 +26,7 @@ It will capture a batch every N seconds, according to the autoSaveTime parameter
 [simple tests](https://imgntn.github.io/j360/index.html)
 
 
-# Setup
+# Example files
 
 Clone the repository and serve its files using a webserver of your choice.
 
@@ -35,7 +35,7 @@ index.html contains simple test shapes.  moving the camera during capture has no
 demo.html is hacked into a three.js demo scene.  moving the camera during capture will change the final shot.
 
 
-# Use
+# Use it yourself
 
 Include the modified CCapture.js and CubeMapToEquirectangular.js libraries. 
 
