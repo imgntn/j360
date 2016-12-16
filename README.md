@@ -34,6 +34,39 @@ index.html contains simple test shapes.  moving the camera during capture has no
 
 demo.html is hacked into a three.js demo scene.  moving the camera during capture will change the final shot.
 
+
+# Use
+
+Include the modified CCapture.js and CubeMapToEquirectangular.js libraries. 
+
+Instantiate a capturer.  Batches will download automatically every N seconds according to the autoSaveTime property.
+
+```
+// Create a capturer that exports Equirectangular 360 JPG images in a TAR file
+var capturer360 = new CCapture({
+    format: 'threesixty',
+    display: true,
+    autoSaveTime: 3,
+});
+```
+
+
+Add this to the end of your render loop
+
+```capturer360.capture(canvas); ```
+
+Call these functions to start  and stop the recording.
+
+```
+function startCapture360(event) {
+    capturer360.start();
+}
+
+function stopCapture360(event) {
+    capturer360.stop();
+}
+```
+
 # Contact
 Get in touch with me on LinkedIn for custom 360 content or more versatile deployments of this software.  
 

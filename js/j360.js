@@ -1,4 +1,4 @@
-// Create a capturer that exports Equirectangular 360 PNG images in a TAR file
+// Create a capturer that exports Equirectangular 360 JPG images in a TAR file
 var capturer360 = new CCapture({
     format: 'threesixty',
     display: true,
@@ -9,18 +9,10 @@ function startCapture360(event) {
     capturer360.start();
 }
 
-function saveCapture360(event) {
-    capturer360.save();
-}
-
 function stopCapture360(event) {
     capturer360.stop();
 }
 
-
-function capture360(event) {
-    return equiManaged.update(camera, scene);
-}
 
 
 var scene, camera, renderer;
