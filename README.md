@@ -50,7 +50,9 @@ var capturer360 = new CCapture({
 });
 ```
 
-Add a managed CubemapToEquirectangular camera when you setup your scene. Here we use “4K” but you can also use “2K” or “1K” as resolutions.
+Add a managed CubemapToEquirectangular camera when you setup your scene.
+
+Here we use “4K” but you can also use “2K” or “1K” as resolutions.
 
 ```equiManaged = new CubemapToEquirectangular(renderer, true,"4K");```
 
@@ -70,6 +72,11 @@ function stopCapture360(event) {
     capturer360.stop();
 }
 ```
+
+
+# File sizes
+In tests of a 30 second capture, I've seen a 1.66GB of 4K 360 images compress into 3.12mb of 4K 360 video.  A lot depends on how much movement there is in the scene, but the reductions are dramatic.
+
 
 # Contact
 Get in touch with me on LinkedIn for custom 360 content or more versatile deployments of this software.  
