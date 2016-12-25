@@ -38,7 +38,7 @@ Clone the repository and serve its files using a webserver of your choice.
 
 # Use it yourself
 
-Include the modified CCapture.js and CubeMapToEquirectangular.js libraries. 
+Include the modified CCapture.js and CubeMapToEquirectangular.js libraries.  You'll need tar.js and download.js as well.  Which controls to include are up to you.
 
 Instantiate a capturer.  Batches will download automatically every N seconds according to the autoSaveTime property.
 
