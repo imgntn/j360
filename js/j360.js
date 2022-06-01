@@ -30,6 +30,7 @@ function init() {
     var container = document.getElementsByClassName('container')[0];
     canvas = container.appendChild(renderer.domElement);
     controls = new THREE.OrbitControls(camera, container);
+    //controls.autoRotate=true;
     camera.position.z = 0.01
 
     var light;
@@ -82,18 +83,19 @@ function makeSingleObject(location, index) {
     return mesh
 }
 
+cameraPositionCount=-5;
 function animate(delta) {
 
     requestAnimationFrame(animate);
-
+    cameraPositionCount++;
+    camera.position.x=cameraPositionCount/4;
 
     meshes.forEach(function(mesh) {
         // mesh.rotation.x += 0.005;
         mesh.rotation.y += 0.003;
     })
-
     controls.update(delta);
-
+    console.log('camera.position.x',camera,camera.position.x);
     renderer.render(scene, camera);
     capturer360.capture(canvas);
 

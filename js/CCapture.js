@@ -189,7 +189,7 @@
     };
 
     CCTarEncoder.prototype.add = function(blob) {
-
+        //how do we move this to an offscreen / threaded / web worker method
         var fileReader = new FileReader();
         fileReader.onload = function() {
             this.tape.append(pad(globalChunkCount) + this.fileExtension, new Uint8Array(fileReader.result));
@@ -266,6 +266,7 @@
 
     CC360Encoder.prototype.add = function(canvas) {
         equiManaged.preBlob(equiManaged.cubeCamera);
+        //why dont we put this into an offscreen canvas and blob there
         equiManaged.canvas.toBlob(function(blob) {
             CCTarEncoder.prototype.add.call(this, blob);
         }.bind(this), this.type, this.quality)
