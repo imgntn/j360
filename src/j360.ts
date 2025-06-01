@@ -1,4 +1,5 @@
 'use strict';
+import { WebMRecorder } from './WebMRecorder';
 
 // Create a capturer that exports Equirectangular 360 JPG images in a TAR file
 const capturer360 = new CCapture({
@@ -15,11 +16,38 @@ const stopCapture360 = () => {
     capturer360.stop();
 };
 
+let webmRecorder: WebMRecorder | null = null;
+const startWebMRecording = () => {
+    if (!webmRecorder && canvas) {
+        webmRecorder = new WebMRecorder(canvas as HTMLCanvasElement);
+    }
+    webmRecorder?.start();
+};
+
+const stopWebMRecording = async () => {
+    if (!webmRecorder) return;
+    const blob = await webmRecorder.stop();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'capture.webm';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    webmRecorder = null;
+};
+
+const toggleStereo = () => {
+    stereo = !stereo;
+};
+
 let scene, camera, renderer;
 let canvas;
 const meshes = [];
 let controls;
 let equiManaged;
+let stereo = false;
 const locationNames = ['top', 'bottom', 'front', 'behind', 'left', 'right'];
 
 const init = () => {
@@ -83,7 +111,7 @@ const makeSingleObject = (location, index) => {
     return mesh;
 };
 
-const animate = (delta) => {
+const animate = (delta?: number) => {
 
     requestAnimationFrame(animate);
 
@@ -95,12 +123,14 @@ const animate = (delta) => {
     controls.update(delta);
 
     renderer.render(scene, camera);
-    capturer360.capture(canvas);
+    if (stereo) {
+        const out = equiManaged.updateStereo(camera, scene);
+        capturer360.capture(out);
+    } else {
+        capturer360.capture(canvas);
+    }
 
 };
-
-
-window.addEventListener('resize', onWindowResize, false);
 
 
 const onWindowResize = () => {
@@ -109,9 +139,14 @@ const onWindowResize = () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 };
 
+window.addEventListener('resize', onWindowResize, false);
+
 init();
 animate();
 
 // expose controls for inline handlers
 window.startCapture360 = startCapture360;
 window.stopCapture360 = stopCapture360;
+window.startWebMRecording = startWebMRecording;
+window.stopWebMRecording = stopWebMRecording;
+window.toggleStereo = toggleStereo;
