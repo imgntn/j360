@@ -53,9 +53,11 @@ var capturer360 = new CCapture({
 
 Add a managed CubemapToEquirectangular camera when you setup your scene.
 
-Here we use “4K” but you can also use “2K” or “1K” as resolutions.
+Here we use “4K” but you can also use “2K” or “1K” as resolutions. The examples
+now expose dropdowns so you can change the resolution and `autoSaveTime` at
+runtime.
 
-```equiManaged = new CubemapToEquirectangular(renderer, true,"4K");```
+```equiManaged = new CubemapToEquirectangular(renderer, true, "4K");```
 
 
 Call the capture method at the end render loop, and give it your canvas.
@@ -89,6 +91,9 @@ Example usage:
 ```bash
 node tools/create-video.js video.mp4 capture-*.tar
 ```
+
+The script now reports progress as it extracts each archive and runs `ffmpeg` so
+you know how many frames are being processed.
 
 In tests of a 30 second capture, I've seen a 1.66GB folder of 4K 360 images compress into a single 3.12mb  4K 360 video.  A lot depends on how much movement there is in the scene, but the reductions are dramatic.
 
