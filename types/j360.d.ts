@@ -1,14 +1,1 @@
-declare const capturer360: any;
-declare const startCapture360: () => void;
-declare const stopCapture360: () => void;
-declare let scene: any, camera: any, renderer: any;
-declare let canvas: any;
-declare const meshes: any[];
-declare let controls: any;
-declare let equiManaged: any;
-declare const locationNames: string[];
-declare const init: () => void;
-declare const placeObjectsAroundYou: () => void;
-declare const makeSingleObject: (location: any, index: any) => any;
-declare const animate: (delta?: number) => void;
-declare const onWindowResize: () => void;
+export {};

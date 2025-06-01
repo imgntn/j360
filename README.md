@@ -76,6 +76,23 @@ function stopCapture360(event) {
 }
 ```
 
+## Direct WebM Capture
+
+Call `startWebMRecording()` and `stopWebMRecording()` to record the canvas
+to a WebM file using WebCodecs. When stopped a WebM file will download
+automatically eliminating the external `ffmpeg` step.
+
+## Headless Rendering
+
+Run `npm run headless` to launch a Puppeteer instance that captures a scene
+and invokes `tools/create-video.js` to build a video without any browser
+interaction.
+
+## Stereo 360° Capture
+
+Toggle stereo mode at runtime with `toggleStereo()`. When enabled the output
+frames contain left and right eye views side‑by‑side for VR playback.
+
 # Unarchive, Convert, and Add Metadata
 
 You can do this manually by extracting the files and running FFMPEG yourself:

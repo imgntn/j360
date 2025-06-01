@@ -30,8 +30,10 @@ function CubemapToEquirectangular(renderer, provideCubeCamera, resolution) {
 	this.canvas = document.createElement('canvas');
 	this.ctx = this.canvas.getContext('2d');
 
-	this.cubeCamera = null;
-	this.attachedCamera = null;
+        this.cubeCamera = null;
+        this.cubeCameraR = null;
+        this.attachedCamera = null;
+        this.stereoCanvas = null;
 
 
 	if (resolution === "4K") {
@@ -143,10 +145,17 @@ CubemapToEquirectangular.prototype.setSize = function(width, height) {
 
 CubemapToEquirectangular.prototype.getCubeCamera = function(size) {
 
-	this.cubeCamera = new THREE.CubeCamera(.1, 10000, Math.min(this.cubeMapSize, size));
-	return this.cubeCamera;
+        this.cubeCamera = new THREE.CubeCamera(.1, 10000, Math.min(this.cubeMapSize, size));
+        return this.cubeCamera;
 
-}
+};
+
+CubemapToEquirectangular.prototype.getCubeCameraR = function(size) {
+
+        this.cubeCameraR = new THREE.CubeCamera(.1, 10000, Math.min(this.cubeMapSize, size));
+        return this.cubeCameraR;
+
+};
 
 CubemapToEquirectangular.prototype.attachCubeCamera = function(camera) {
 
@@ -184,16 +193,42 @@ CubemapToEquirectangular.prototype.convert = function(cubeCamera) {
 			document.body.removeChild(anchor);
 		}, 1);
 
-	}, 'image/jpeg');
+        }, 'image/jpeg');
 
-}
+};
 
-CubemapToEquirectangular.prototype.preBlob = function(cubeCamera) {
+CubemapToEquirectangular.prototype.convertStereo = function(leftCamera, rightCamera) {
+
+        this.quad.material.uniforms.map.value = leftCamera.renderTarget.texture;
+        this.renderer.render(this.scene, this.camera, this.output, true);
+        var leftPixels = new Uint8Array(4 * this.width * this.height);
+        this.renderer.readRenderTargetPixels(this.output, 0, 0, this.width, this.height, leftPixels);
+        var leftData = new ImageData(new Uint8ClampedArray(leftPixels), this.width, this.height);
+
+        this.quad.material.uniforms.map.value = rightCamera.renderTarget.texture;
+        this.renderer.render(this.scene, this.camera, this.output, true);
+        var rightPixels = new Uint8Array(4 * this.width * this.height);
+        this.renderer.readRenderTargetPixels(this.output, 0, 0, this.width, this.height, rightPixels);
+        var rightData = new ImageData(new Uint8ClampedArray(rightPixels), this.width, this.height);
+
+        if (!this.stereoCanvas) {
+                this.stereoCanvas = document.createElement('canvas');
+        }
+        this.stereoCanvas.width = this.width * 2;
+        this.stereoCanvas.height = this.height;
+        var sctx = this.stereoCanvas.getContext('2d');
+        sctx.putImageData(leftData, 0, 0);
+        sctx.putImageData(rightData, this.width, 0);
+        return this.stereoCanvas;
+
+};
+
+CubemapToEquirectangular.prototype.preBlob = function(cubeCamera, camera, scene) {
 
 	var autoClear = this.renderer.autoClear;
 	this.renderer.autoClear = true;
-	this.cubeCamera.position.copy(camera.position);
-	this.cubeCamera.updateCubeMap(this.renderer, scene);
+        this.cubeCamera.position.copy(camera.position);
+        this.cubeCamera.updateCubeMap(this.renderer, scene);
 	this.renderer.autoClear = autoClear;
 
 	this.quad.material.uniforms.map.value = cubeCamera.renderTarget.texture;
@@ -217,6 +252,26 @@ CubemapToEquirectangular.prototype.update = function(camera, scene) {
 	this.cubeCamera.updateCubeMap(this.renderer, scene);
 	this.renderer.autoClear = autoClear;
 
-	this.convert(this.cubeCamera);
+        this.convert(this.cubeCamera);
 
-}
+};
+
+CubemapToEquirectangular.prototype.updateStereo = function(camera, scene, eyeOffset) {
+
+        eyeOffset = eyeOffset || 0.032;
+        if (!this.cubeCamera) this.getCubeCamera(this.width / 2);
+        if (!this.cubeCameraR) this.getCubeCameraR(this.width / 2);
+
+        var autoClear = this.renderer.autoClear;
+        this.renderer.autoClear = true;
+
+        this.cubeCamera.position.copy(camera.position).add(new THREE.Vector3(-eyeOffset, 0, 0));
+        this.cubeCamera.updateCubeMap(this.renderer, scene);
+
+        this.cubeCameraR.position.copy(camera.position).add(new THREE.Vector3(eyeOffset, 0, 0));
+        this.cubeCameraR.updateCubeMap(this.renderer, scene);
+        this.renderer.autoClear = autoClear;
+
+        return this.convertStereo(this.cubeCamera, this.cubeCameraR);
+
+};
