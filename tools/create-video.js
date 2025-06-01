@@ -18,12 +18,17 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'j360-'));
 
 console.log(`Extracting archives to ${tmpDir}`);
 
-for (const archive of archives) {
+archives.forEach((archive, idx) => {
+  console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
   const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
   if (res.status !== 0) {
     console.error(`Failed to extract ${archive}`);
     process.exit(res.status);
   }
+});
+
+const frameCount = fs.readdirSync(tmpDir).filter(f => f.endsWith('.jpg')).length;
+console.log(`Found ${frameCount} frames`);
 }
 
 const ffmpegArgs = ['-y', '-i', path.join(tmpDir, '%07d.jpg'), output];
@@ -33,6 +38,7 @@ if (res.status !== 0) {
   console.error('ffmpeg failed');
   process.exit(res.status);
 }
+console.log('ffmpeg complete');
 
 try {
   const which = spawnSync('which', ['spatialmedia']);

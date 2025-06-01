@@ -4,7 +4,7 @@
 <title>j360</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <!-- bundled script -->
-<script type="module" src="./src/j360.js"></script>
+<script type="module" src="./src/j360.ts"></script>
 
 <script>
  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -21,10 +21,12 @@
 <div class="container" style="position:fixed;width:100%;height:100%;top:0;left:0"></div>
 
 <div class="buttonHolder" style="position:relative;text-align:center;">
-<button class="startButton" onclick="startCapture360()">Start Capture</button>
-<button class="saveButton"  onclick="stopCapture360()">Stop Capture</button>
+  <label>Resolution <select id="resolution"><option>4K</option><option>2K</option><option>1K</option></select></label>
+  <label>Auto Save (s) <input id="autoSaveTime" type="number" value="3" min="1" step="1"/></label>
+  <button class="startButton" onclick="startCapture360()">Start Capture</button>
+  <button class="saveButton"  onclick="stopCapture360()">Stop Capture</button>
+  <span id="progress"></span>
 </div>
-
 
 </body>
 </html>

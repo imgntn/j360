@@ -43,8 +43,11 @@
         </div>
 
 <div class="buttonHolder" style="position:relative;text-align:center;top:40px">
+<label>Resolution <select id="resolution"><option>4K</option><option>2K</option><option>1K</option></select></label>
+<label>Auto Save (s) <input id="autoSaveTime" type="number" value="3" min="1" step="1"/></label>
 <button class="startButton" onclick="startCapture360()">Start Capture</button>
 <button class="saveButton"  onclick="stopCapture360()">Stop Capture</button>
+<span id="progress"></span>
 </div>
 
         <!-- bundled script -->
@@ -52,7 +55,7 @@
 import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import CCapture from 'ccapture.js';
-import CubemapToEquirectangular from './src/CubemapToEquirectangular.js';
+import CubemapToEquirectangular from './src/CubemapToEquirectangular.ts';
 
             var container;
 
@@ -87,7 +90,19 @@ var capturer360 = new CCapture({
 });
 
 
+var frameCount = 0;
+var resolutionSelect = document.getElementById('resolution');
+var autoSaveInput = document.getElementById('autoSaveTime');
+var progressEl = document.getElementById('progress');
+
 function startCapture360(event) {
+    frameCount = 0;
+    if (autoSaveInput) {
+        capturer360.autoSaveTime = parseFloat(autoSaveInput.value);
+    }
+    if (resolutionSelect && equiManaged) {
+        equiManaged.setResolution(resolutionSelect.value, true);
+    }
     capturer360.start();
 }
 
@@ -312,7 +327,9 @@ function capture360(event) {
                 renderer.gammaOutput = true;
 
                 //
-                 equiManaged = new CubemapToEquirectangular(renderer, true,"4K");
+                const resSel = document.getElementById('resolution');
+                const resVal = resSel ? resSel.value : '4K';
+                equiManaged = new CubemapToEquirectangular(renderer, true, resVal);
 
                 controls = new THREE.TrackballControls( camera, renderer.domElement );
                 controls.target.set( 0, 120, 0 );
@@ -380,6 +397,8 @@ function capture360(event) {
 
                 renderer.render( scene, camera );
                 capturer360.capture(canvas);
+                frameCount++;
+                if (progressEl) progressEl.textContent = 'Frames: ' + frameCount;
 
             }
 
