@@ -29,7 +29,7 @@ archives.forEach((archive, idx) => {
 
 const frameCount = fs.readdirSync(tmpDir).filter(f => f.endsWith('.jpg')).length;
 console.log(`Found ${frameCount} frames`);
-}
+
 
 const ffmpegArgs = ['-y', '-i', path.join(tmpDir, '%07d.jpg'), output];
 console.log(`Running ffmpeg ${ffmpegArgs.join(' ')}`);

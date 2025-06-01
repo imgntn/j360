@@ -9,6 +9,10 @@ const capturer360 = new CCapture({
 });
 
 const startCapture360 = () => {
+    const resSel = document.getElementById('resolution') as HTMLSelectElement | null;
+    if (resSel && equiManaged) {
+        equiManaged.setResolution(resSel.value, true);
+    }
     capturer360.start();
 };
 
@@ -18,10 +22,11 @@ const stopCapture360 = () => {
 
 let webmRecorder: WebMRecorder | null = null;
 const startWebMRecording = () => {
-    if (!webmRecorder && canvas) {
-        webmRecorder = new WebMRecorder(canvas as HTMLCanvasElement);
+    if (!webmRecorder) {
+        const src = stereo ? equiManaged.getStereoCanvas() : (canvas as HTMLCanvasElement);
+        webmRecorder = new WebMRecorder(src as HTMLCanvasElement);
     }
-    webmRecorder?.start();
+    webmRecorder.start();
 };
 
 const stopWebMRecording = async () => {

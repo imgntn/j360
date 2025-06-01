@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "tsc",
     "serve": "vite preview",
-    "headless": "node tools/headless-capture.js"
+    "headless": "node tools/headless-capture.js",
+    "cli": "node tools/j360-cli.js"
   },
   "dependencies": {
     "three": "^0.161.0",
