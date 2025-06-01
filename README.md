@@ -86,6 +86,26 @@ In tests of a 30 second capture, I've seen a 1.66GB folder of 4K 360 images comp
 
 Then use the [Spatial Media Metadata Injector](https://github.com/google/spatial-media/releases) to add spatial metadata and upload.
 
+## Build and Run
+
+Install dependencies with `npm install` and start a development server:
+
+```bash
+npm run dev
+```
+
+Build the bundled assets:
+
+```bash
+npm run build
+```
+
+Preview the production build locally:
+
+```bash
+npm run serve
+```
+
 # Contact
 Get in touch with me on LinkedIn for custom 360 content or more versatile deployments of this software.  
 

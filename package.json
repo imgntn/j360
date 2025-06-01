@@ -1,0 +1,17 @@
+{
+  "name": "j360",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.161.0",
+    "ccapture.js": "^1.1.0"
+  },
+  "devDependencies": {
+    "vite": "^4.5.0"
+  }
+}

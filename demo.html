@@ -47,20 +47,12 @@
 <button class="saveButton"  onclick="stopCapture360()">Stop Capture</button>
 </div>
 
-        <script src="js/three.min.js"></script>
-
-        <script src="js/TrackballControls.js"></script>
-
-<!-- movie capture section -->
-<script src="js/CCapture.js"></script>
-<!-- Include tar.js if you want to export PNG or JPEG -->
-<script src="js/tar.js"></script>
-<!-- Include download.js for easier file download -->
-<script src="js/download.js"></script>
-<!-- 360 capture section -->
-<script src="js/CubemapToEquirectangular.js"></script>
-
-<script>
+        <!-- bundled script -->
+        <script type="module">
+import * as THREE from 'three';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
+import CCapture from 'ccapture.js';
+import CubemapToEquirectangular from './src/CubemapToEquirectangular.js';
 
             var container;
 
@@ -388,8 +380,11 @@ function capture360(event) {
 
                 renderer.render( scene, camera );
                 capturer360.capture(canvas);
-            
+
             }
+
+            window.startCapture360 = startCapture360;
+            window.stopCapture360 = stopCapture360;
 
         </script>
 
