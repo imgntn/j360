@@ -76,15 +76,21 @@ function stopCapture360(event) {
 
 # Unarchive, Convert, and Add Metadata
 
-Unarchive the .tar files to a single folder and then convert the whole folder of images into a movie with one FFMPEG command
+You can do this manually by extracting the files and running FFMPEG yourself:
 
 ```ffmpeg -i %07d.jpg video.mp4```
 
-The “%07d” tells FFMPEG that there are 7 decimals before the “.jpg” extension in each filename. 
+The “%07d” tells FFMPEG that there are 7 decimals before the “.jpg” extension in each filename.
+
+To automate the process a script is provided in `tools/create-video.js`.  It requires `node`, `tar` and `ffmpeg` to be installed.  If the [Spatial Media Metadata Injector](https://github.com/google/spatial-media/releases) is available in your `PATH` the script will also embed the metadata automatically.
+
+Example usage:
+
+```bash
+node tools/create-video.js video.mp4 capture-*.tar
+```
 
 In tests of a 30 second capture, I've seen a 1.66GB folder of 4K 360 images compress into a single 3.12mb  4K 360 video.  A lot depends on how much movement there is in the scene, but the reductions are dramatic.
-
-Then use the [Spatial Media Metadata Injector](https://github.com/google/spatial-media/releases) to add spatial metadata and upload.
 
 ## Build and Run
 
