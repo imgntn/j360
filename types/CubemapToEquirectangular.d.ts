@@ -24,10 +24,10 @@ export declare class CubemapToEquirectangular {
     getCubeCameraR(size?: number): any;
     setResolution(resolution: string, updateCamera?: boolean): void;
     attachCubeCamera(camera: any): void;
-    convert(cubeCamera: any): void;
+    convert(cubeCamera: any): Promise<void>;
     convertStereo(leftCamera: any, rightCamera: any): HTMLCanvasElement;
     getStereoCanvas(): HTMLCanvasElement;
     preBlob(cubeCamera: any, camera: any, scene: any): void;
-    update(camera: any, scene: any): void;
+    update(camera: any, scene: any): Promise<void>;
     updateStereo(camera: any, scene: any, eyeOffset?: number): HTMLCanvasElement;
 }

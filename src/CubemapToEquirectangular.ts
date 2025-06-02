@@ -16,6 +16,12 @@ export class CubemapToEquirectangular {
   useWebGPU: boolean;
   cubeMapSize: number;
   maxTextureSize: number;
+  private device: GPUDevice | null = null;
+  private pipeline: GPUComputePipeline | null = null;
+  private sampler: GPUSampler | null = null;
+  private cubeTex: GPUTexture | null = null;
+  private outputTex: GPUTexture | null = null;
+  private queue: GPUQueue | null = null;
 
   selectBestResolution(preferred: string) {
     const gl = this.renderer.getContext();
@@ -171,6 +177,18 @@ void main()  {
     return this.cubeCamera;
   }
 
+  private async initWebGPU() {
+    if (this.device) return;
+    const adapter = await (navigator as any).gpu.requestAdapter();
+    if (!adapter) throw new Error('WebGPU adapter not found');
+    this.device = await adapter.requestDevice();
+    this.queue = this.device.queue;
+    const shader = await fetch(new URL('./equirect-webgpu.wgsl', import.meta.url)).then(r => r.text());
+    const module = this.device.createShaderModule({ code: shader });
+    this.pipeline = this.device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } });
+    this.sampler = this.device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
+  }
+
   getCubeCameraR(size: number = this.width / 2) {
     this.cubeCameraR = new THREE.CubeCamera(.1, 10000, Math.min(this.cubeMapSize, size));
     return this.cubeCameraR;
@@ -211,10 +229,62 @@ void main()  {
     this.attachedCamera = camera;
   }
 
-  convert(cubeCamera: any) {
+  private async convertWebGPU(cubeCamera: any) {
+    await this.initWebGPU();
+    const device = this.device as GPUDevice;
+    const queue = this.queue as GPUQueue;
+    const size = cubeCamera.renderTarget.width;
+    if (!this.cubeTex || this.cubeTex.width !== size) {
+      this.cubeTex = device.createTexture({
+        size: [size, size, 6],
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+      });
+    }
+    if (!this.outputTex || this.outputTex.width !== this.width) {
+      this.outputTex = device.createTexture({
+        size: [this.width, this.height],
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
+      });
+    }
+    for (let i = 0; i < 6; i++) {
+      const pixels = new Uint8Array(4 * size * size);
+      this.renderer.readRenderTargetPixels(cubeCamera.renderTarget, 0, 0, size, size, pixels, i);
+      const bitmap = await createImageBitmap(new ImageData(new Uint8ClampedArray(pixels), size, size));
+      queue.copyExternalImageToTexture({ source: bitmap }, { texture: this.cubeTex, origin: [0, 0, i] }, [size, size]);
+    }
+    const bind = device.createBindGroup({
+      layout: this.pipeline!.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.sampler! },
+        { binding: 1, resource: this.cubeTex.createView({ dimension: 'cube' }) },
+        { binding: 2, resource: this.outputTex.createView() }
+      ]
+    });
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(this.pipeline!);
+    pass.setBindGroup(0, bind);
+    pass.dispatchWorkgroups(Math.ceil(this.width / 8), Math.ceil(this.height / 8));
+    pass.end();
+    const readBuf = device.createBuffer({
+      size: this.width * this.height * 4,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+    });
+    encoder.copyTextureToBuffer({ texture: this.outputTex }, { buffer: readBuf, bytesPerRow: this.width * 4 }, [this.width, this.height]);
+    queue.submit([encoder.finish()]);
+    await readBuf.mapAsync(GPUMapMode.READ);
+    const pixels = new Uint8Array(readBuf.getMappedRange());
+    const data = new Uint8ClampedArray(pixels.slice());
+    readBuf.unmap();
+    const imageData = new ImageData(data, this.width, this.height);
+    this.ctx?.putImageData(imageData, 0, 0);
+  }
+
+  async convert(cubeCamera: any) {
     if (this.useWebGPU) {
-      console.warn('WebGPU conversion not fully implemented');
-      return;
+      return this.convertWebGPU(cubeCamera);
     }
     this.quad.material.uniforms.map.value = cubeCamera.renderTarget.texture;
     this.renderer.render(this.scene, this.camera, this.output, true);
@@ -333,14 +403,14 @@ void main()  {
     this.ctx?.putImageData(imageData, 0, 0);
   }
 
-  update(camera: any, scene: any) {
+  async update(camera: any, scene: any) {
     const autoClear = this.renderer.autoClear;
     this.renderer.autoClear = true;
     this.cubeCamera.position.copy(camera.position);
     this.cubeCamera.updateCubeMap(this.renderer, scene);
     this.renderer.autoClear = autoClear;
 
-    this.convert(this.cubeCamera);
+    await this.convert(this.cubeCamera);
   }
 
   updateStereo(camera: any, scene: any, eyeOffset = 0.032) {

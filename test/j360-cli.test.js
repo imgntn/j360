@@ -14,4 +14,8 @@ assert.strictEqual(res3.values.fps, '30');
 assert.strictEqual(res3.values['no-audio'], true);
 assert.strictEqual(res3.values.wasm, true);
 
+const res4 = parse(['--incremental','--hls']);
+assert.strictEqual(res4.values.incremental, true);
+assert.strictEqual(res4.values.hls, true);
+
 console.log('j360-cli argument parsing ok');

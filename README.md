@@ -92,7 +92,8 @@ smooth even at high resolutions.
 
 When WebGPU is available the library can output equirectangular frames at
 **16K** and **12K** resolutions. The converter automatically selects WebGPU when
-these ultra high resolutions are requested.
+these ultra high resolutions are requested and now uses a compute shader for
+fast cubemap projection.
 
 ## Headless Rendering
 
@@ -113,6 +114,11 @@ WebRTC preview while capturing. Argument parsing uses Node's built in
 and `tar-stream` instead of shelling out to external commands. A simple progress
 indicator shows capture status and, when using `--wasm`, encoding progress as
 well. Example:
+
+Use `--incremental` with `--wasm` to encode video in small chunks to reduce
+memory usage. For live previews an HLS server can be launched automatically with
+`--hls`, and frames will stream to `http://localhost:8000/hls/out.m3u8` during
+capture.
 
 ```bash
 node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html

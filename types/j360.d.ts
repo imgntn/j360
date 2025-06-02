@@ -12,13 +12,14 @@ export declare class J360App {
     private meshes;
     private stereo;
     private vrSession;
+    private hlsUrl;
     constructor();
     private startCapture360;
     private stopCapture360;
     private startWebMRecording: (fps?: number, includeAudio?: boolean) => void;
     private stopWebMRecording: () => Promise<void>;
     private stopWebMRecordingForCli: () => Promise<ArrayBuffer | null>;
-    private startWasmRecording: (fps?: number) => Promise<void>;
+    private startWasmRecording: (fps?: number, incremental?: boolean) => Promise<void>;
     private stopWasmRecordingForCli: () => Promise<ArrayBuffer | null>;
     private toggleStereo;
     private enterVR;
@@ -29,6 +30,8 @@ export declare class J360App {
     private makeSingleObject;
     private animate;
     private onWindowResize;
+    private startHLS;
+    private stopHLS;
     bindWindow(): void;
 }
 export declare const j360App: J360App;

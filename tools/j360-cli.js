@@ -18,7 +18,9 @@ function parse(argv = process.argv.slice(2)) {
       fps: { type: 'string' },
       'no-audio': { type: 'boolean' },
       stream: { type: 'boolean' },
-      'signal-url': { type: 'string' }
+      'signal-url': { type: 'string' },
+      incremental: { type: 'boolean' },
+      hls: { type: 'boolean' }
     },
     allowPositionals: true
   });
@@ -38,6 +40,8 @@ async function run() {
   const includeAudio = !values['no-audio'];
   const stream = !!values.stream;
   const signalUrl = values['signal-url'] || 'http://localhost:3000';
+  const incremental = !!values.incremental;
+  const hls = !!values.hls;
 
   function checkCmd(cmd) {
     const res = spawnSync('which', [cmd]);
@@ -60,27 +64,35 @@ async function run() {
     console.error(String(e));
     process.exit(1);
   }
+
+  let hlsProc;
+  if (hls) {
+    hlsProc = require('child_process').spawn('node', [path.join('tools', 'hls-server.js'), '--fps', String(fps)], { stdio: 'inherit' });
+  }
   const puppeteer = require('puppeteer');
   const url = 'file://' + path.resolve(html);
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl, hls }) => {
     const sel = document.getElementById('resolution');
     if (sel) sel.value = resolution;
     if (stereo) window.toggleStereo();
     if (useWebM) {
       window.startWebMRecording(fps, includeAudio);
     } else if (useWasm) {
-      window.startWasmRecording(fps);
+      window.startWasmRecording(fps, incremental);
     } else {
       window.startCapture360();
     }
     if (stream) {
       window.startStreaming(signalUrl);
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl });
+    if (hls) {
+      window.startHLS('http://localhost:8000');
+    }
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl, hls, incremental });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
@@ -94,6 +106,7 @@ async function run() {
   if (useWebM) {
     const buffer = await page.evaluate(() => window.stopWebMRecordingForCli());
     await browser.close();
+    if (hls && hlsProc) hlsProc.kill('SIGINT');
     if (!buffer) throw new Error('No WebM data received');
     fs.writeFileSync(output, Buffer.from(buffer));
     console.log('Saved WebM to', output);
@@ -103,14 +116,16 @@ async function run() {
   if (useWasm) {
     const buffer = await page.evaluate(() => window.stopWasmRecordingForCli());
     await browser.close();
+    if (hls && hlsProc) hlsProc.kill('SIGINT');
     if (!buffer) throw new Error('No video data received');
     fs.writeFileSync(output, Buffer.from(buffer));
     console.log('Saved video to', output);
     return;
   }
 
-  await page.evaluate(() => { window.stopCapture360(); if (window.stopStreaming) window.stopStreaming(); });
+  await page.evaluate(() => { window.stopCapture360(); if (window.stopStreaming) window.stopStreaming(); if (window.stopHLS) window.stopHLS(); });
   await browser.close();
+  if (hls && hlsProc) hlsProc.kill('SIGINT');
 
   const archives = fs.readdirSync(process.cwd()).filter(f => /^capture-.*\.tar$/.test(f));
   if (archives.length === 0) {
