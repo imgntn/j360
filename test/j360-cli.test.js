@@ -1,19 +1,5 @@
 const assert = require('assert');
-const { parseArgs } = require('node:util');
-
-function parse(argv) {
-  const parsed = parseArgs({
-    args: argv,
-    options: {
-      frames: { type: 'string', short: 'f' },
-      resolution: { type: 'string', short: 'r' },
-      stereo: { type: 'boolean', short: 's' },
-      webm: { type: 'boolean', short: 'w' }
-    },
-    allowPositionals: true
-  });
-  return { values: parsed.values, positionals: parsed.positionals };
-}
+const { parse } = require('../tools/j360-cli.js');
 
 const res1 = parse(['-f','120','out.mp4']);
 assert.strictEqual(res1.values.frames, '120');

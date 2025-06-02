@@ -90,9 +90,9 @@ export class J360App {
   };
 
   private captureFrameAsync = () => {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(async (resolve, reject) => {
       if (!this.equiManaged) return resolve();
-      this.equiManaged.preBlob(this.equiManaged.cubeCamera, this.camera, this.scene);
+      await this.equiManaged.preBlobAsync(this.equiManaged.cubeCamera, this.camera, this.scene);
       const { width, height, ctx } = this.equiManaged;
       const data = ctx.getImageData(0, 0, width, height).data;
       this.jpegWorker.onmessage = (e: MessageEvent) => {
