@@ -5,21 +5,22 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { parseArgs } = require('node:util');
-const puppeteer = require('puppeteer');
 
-const parsed = parseArgs({
-  args: process.argv.slice(2),
-  options: {
-    frames: { type: 'string', short: 'f' },
-    resolution: { type: 'string', short: 'r' },
-    stereo: { type: 'boolean', short: 's' },
-    webm: { type: 'boolean', short: 'w' }
-  },
-  allowPositionals: true
-});
+function parse(argv = process.argv.slice(2)) {
+  const parsed = parseArgs({
+    args: argv,
+    options: {
+      frames: { type: 'string', short: 'f' },
+      resolution: { type: 'string', short: 'r' },
+      stereo: { type: 'boolean', short: 's' },
+      webm: { type: 'boolean', short: 'w' }
+    },
+    allowPositionals: true
+  });
+  return { values: parsed.values, positionals: parsed.positionals };
+}
 
-const values = parsed.values;
-const positionals = parsed.positionals;
+const { values, positionals } = parse();
 
 const output = positionals[0] || 'video.mp4';
 const html = positionals[1] || 'index.html';
@@ -35,13 +36,6 @@ function checkCmd(cmd) {
   }
 }
 
-const output = args._[0] || 'video.mp4';
-const html = args._[1] || 'index.html';
-const frames = parseInt(args.frames || '300', 10);
-const resolution = args.resolution || '4K';
-const stereo = !!args.stereo;
-const useWebM = !!args.webm;
-
 async function run() {
   try {
     checkCmd('tar');
@@ -50,6 +44,7 @@ async function run() {
     console.error(String(e));
     process.exit(1);
   }
+  const puppeteer = require('puppeteer');
   const url = 'file://' + path.resolve(html);
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
@@ -137,4 +132,8 @@ async function run() {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
 
-run().catch(err => { console.error(err); process.exit(1); });
+if (require.main === module) {
+  run().catch(err => { console.error(err); process.exit(1); });
+}
+
+module.exports = { parse };

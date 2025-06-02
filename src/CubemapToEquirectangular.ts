@@ -12,6 +12,7 @@ export class CubemapToEquirectangular {
   cubeCameraR: any = null;
   attachedCamera: any = null;
   stereoCanvas: HTMLCanvasElement | null = null;
+  worker: Worker;
   cubeMapSize: number;
   maxTextureSize: number;
 
@@ -61,6 +62,8 @@ void main()  {
   constructor(renderer: any, provideCubeCamera = true, resolution = '4K') {
     this.renderer = renderer;
     resolution = resolution.toUpperCase();
+
+    this.worker = new Worker(new URL('./equirectWorker.ts', import.meta.url), { type: 'module' });
 
     this.material = new THREE.RawShaderMaterial({
       uniforms: {
@@ -251,6 +254,40 @@ void main()  {
       this.stereoCanvas.height = this.height;
     }
     return this.stereoCanvas;
+  }
+
+  private convertOffThread(faces: ImageBitmap[]): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const handler = (e: MessageEvent) => {
+        this.worker.removeEventListener('message', handler);
+        resolve(e.data.buffer);
+      };
+      this.worker.addEventListener('message', handler, { once: true });
+      this.worker.addEventListener('error', err => {
+        reject(err);
+      }, { once: true });
+      this.worker.postMessage({ faces, width: this.width, height: this.height }, faces);
+    });
+  }
+
+  async preBlobAsync(cubeCamera: any, camera: any, scene: any) {
+    const autoClear = this.renderer.autoClear;
+    this.renderer.autoClear = true;
+    this.cubeCamera.position.copy(camera.position);
+    this.cubeCamera.updateCubeMap(this.renderer, scene);
+    this.renderer.autoClear = autoClear;
+
+    const size = cubeCamera.renderTarget.width;
+    const faces: ImageBitmap[] = [];
+    for (let i = 0; i < 6; i++) {
+      const pixels = new Uint8Array(4 * size * size);
+      this.renderer.readRenderTargetPixels(cubeCamera.renderTarget, 0, 0, size, size, pixels, i);
+      const bitmap = await createImageBitmap(new ImageData(new Uint8ClampedArray(pixels), size, size));
+      faces.push(bitmap);
+    }
+    const buffer = await this.convertOffThread(faces);
+    const imageData = new ImageData(new Uint8ClampedArray(buffer), this.width, this.height);
+    this.ctx?.putImageData(imageData, 0, 0);
   }
 
   preBlob(cubeCamera: any, camera: any, scene: any) {
