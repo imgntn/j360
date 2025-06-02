@@ -1,5 +1,6 @@
 'use strict';
 import { WebMRecorder } from './WebMRecorder';
+import { WebCodecsRecorder } from './WebCodecsRecorder';
 import { CubemapToEquirectangular } from './CubemapToEquirectangular';
 import { FfmpegEncoder } from './FfmpegEncoder';
 import { WebRTCStreamer } from './WebRTCStreamer';
@@ -8,6 +9,7 @@ export class J360App {
   private jpegWorker = new Worker(new URL('./convertWorker.ts', import.meta.url), { type: 'module' });
   private capturer360 = new CCapture({ format: 'threesixty', display: true, autoSaveTime: 3 });
   private webmRecorder: WebMRecorder | null = null;
+  private webCodecsRecorder: WebCodecsRecorder | null = null;
   private ffmpegEncoder: FfmpegEncoder | null = null;
   private scene: any;
   private camera: any;
@@ -17,7 +19,9 @@ export class J360App {
   private equiManaged: any;
   private meshes: any[] = [];
   private stereo = false;
+  private recording = false;
   private vrSession: XRSession | null = null;
+  private vrHud: HTMLElement | null = null;
   private streamer: WebRTCStreamer | null = null;
   private hlsUrl: string | null = null;
 
@@ -32,10 +36,14 @@ export class J360App {
       this.equiManaged.setResolution(resSel.value, true);
     }
     this.capturer360.start();
+    this.recording = true;
+    this.updateVrHud();
   };
 
   private stopCapture360 = () => {
     this.capturer360.stop();
+    this.recording = false;
+    this.updateVrHud();
   };
 
   private startWebMRecording = (fps = 60, includeAudio = true) => {
@@ -44,6 +52,19 @@ export class J360App {
       this.webmRecorder = new WebMRecorder(src as HTMLCanvasElement, fps, includeAudio);
     }
     this.webmRecorder.start();
+    this.recording = true;
+    this.updateVrHud();
+  };
+
+  private startWebCodecsRecording = async (fps = 60, includeAudio = true) => {
+    if (!this.webCodecsRecorder) {
+      const src = this.stereo ? this.equiManaged.getStereoCanvas() : (this.canvas as HTMLCanvasElement);
+      this.webCodecsRecorder = new WebCodecsRecorder(src as HTMLCanvasElement, fps, includeAudio);
+      await this.webCodecsRecorder.init();
+      this.webCodecsRecorder.start();
+    }
+    this.recording = true;
+    this.updateVrHud();
   };
 
   private startHLS = (url: string) => {
@@ -66,6 +87,8 @@ export class J360App {
     a.click();
     document.body.removeChild(a);
     this.webmRecorder = null;
+    this.recording = false;
+    this.updateVrHud();
   };
 
   private stopWebMRecordingForCli = async () => {
@@ -73,13 +96,42 @@ export class J360App {
     const blob = await this.webmRecorder.stop();
     const buffer = await blob.arrayBuffer();
     this.webmRecorder = null;
+    this.recording = false;
+    this.updateVrHud();
     return buffer;
   };
 
-  private startWasmRecording = async (fps = 60, incremental = false) => {
+  private stopWebCodecsRecordingForCli = async () => {
+    if (!this.webCodecsRecorder) return null;
+    const blob = await this.webCodecsRecorder.stop();
+    const buffer = await blob.arrayBuffer();
+    this.webCodecsRecorder = null;
+    this.recording = false;
+    this.updateVrHud();
+    return buffer;
+  };
+
+  private stopWebCodecsRecording = async () => {
+    if (!this.webCodecsRecorder) return;
+    const blob = await this.webCodecsRecorder.stop();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'capture.webm';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    this.webCodecsRecorder = null;
+    this.recording = false;
+    this.updateVrHud();
+  };
+
+  private startWasmRecording = async (fps = 60, incremental = false, includeAudio = false, audioData?: Uint8Array) => {
     if (!this.ffmpegEncoder) {
-      this.ffmpegEncoder = new FfmpegEncoder(fps, 'mp4', incremental);
+      this.ffmpegEncoder = new FfmpegEncoder(fps, 'mp4', incremental, includeAudio, audioData || null);
       await this.ffmpegEncoder.init();
+      this.recording = true;
     }
   };
 
@@ -87,6 +139,7 @@ export class J360App {
     if (!this.ffmpegEncoder) return null;
     const data = await this.ffmpegEncoder.encode(progress);
     this.ffmpegEncoder = null;
+    this.recording = false;
     return data.buffer;
   };
 
@@ -107,6 +160,27 @@ export class J360App {
     this.stereo = !this.stereo;
   };
 
+  private updateVrHud = () => {
+    if (this.vrHud) this.vrHud.textContent = this.recording ? 'Recording' : '';
+  };
+
+  private onVrSelect = () => {
+    if (this.recording) {
+      if (this.webCodecsRecorder) this.stopWebCodecsRecording();
+      else if (this.webmRecorder) this.stopWebMRecording();
+      else if (this.ffmpegEncoder) this.stopWasmRecordingForCli();
+      else this.stopCapture360();
+    } else {
+      this.startWebMRecording();
+    }
+    this.updateVrHud();
+  };
+
+  private onVrSqueeze = () => {
+    this.toggleStereo();
+    this.updateVrHud();
+  };
+
   private enterVR = async () => {
     if (!navigator.xr) return;
     if (this.vrSession) {
@@ -116,14 +190,19 @@ export class J360App {
     }
     try {
       const overlay = document.getElementById('vr-overlay');
+      this.vrHud = document.getElementById('vr-hud');
       this.vrSession = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'dom-overlay'], domOverlay: { root: overlay } });
       if (overlay) overlay.style.display = 'block';
       this.renderer.xr.enabled = true;
       this.renderer.xr.setSession(this.vrSession);
       this.vrSession.addEventListener('end', () => {
         if (overlay) overlay.style.display = 'none';
+        this.vrSession?.removeEventListener('select', this.onVrSelect);
+        this.vrSession?.removeEventListener('squeeze', this.onVrSqueeze);
         this.vrSession = null;
       });
+      this.vrSession.addEventListener('select', this.onVrSelect);
+      this.vrSession.addEventListener('squeeze', this.onVrSqueeze);
     } catch (e) {
       console.error(e);
     }
@@ -262,10 +341,13 @@ export class J360App {
     (window as any).stopCapture360 = this.stopCapture360;
     (window as any).startWebMRecording = this.startWebMRecording;
     (window as any).stopWebMRecording = this.stopWebMRecording;
+    (window as any).startWebCodecsRecording = this.startWebCodecsRecording;
+    (window as any).stopWebCodecsRecording = this.stopWebCodecsRecording;
     (window as any).toggleStereo = this.toggleStereo;
     (window as any).captureFrameAsync = this.captureFrameAsync;
     (window as any).enterVR = this.enterVR;
     (window as any).stopWebMRecordingForCli = this.stopWebMRecordingForCli;
+    (window as any).stopWebCodecsRecordingForCli = this.stopWebCodecsRecordingForCli;
     (window as any).startWasmRecording = this.startWasmRecording;
     (window as any).stopWasmRecordingForCli = this.stopWasmRecordingForCli;
     (window as any).startStreaming = this.startStreaming;

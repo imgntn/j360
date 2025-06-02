@@ -3,8 +3,11 @@ export declare class FfmpegEncoder {
     private frames;
     private chunks;
     private chunkSize;
-    constructor(fps?: number, format?: 'mp4' | 'webm', incremental?: boolean);
+    private audioRec;
+    private audioChunks;
+    private audioData;
+    constructor(fps?: number, format?: 'mp4' | 'webm', incremental?: boolean, includeAudio?: boolean, extAudioData?: Uint8Array | null);
     init(): Promise<void>;
     addFrame(data: Uint8Array): void;
-    encode(): Promise<Uint8Array>;
+    encode(onProgress?: (p: number) => void): Promise<Uint8Array>;
 }
