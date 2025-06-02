@@ -7,8 +7,8 @@
     "declaration": true,
     "outDir": "dist",
     "declarationDir": "types",
-    "rootDir": "src"
+    "rootDir": "."
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "tools/**/*.ts"],
   "files": ["src/global.d.ts"]
 }

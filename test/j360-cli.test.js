@@ -9,4 +9,9 @@ const res2 = parse(['--stereo','--webm']);
 assert.strictEqual(res2.values.stereo, true);
 assert.strictEqual(res2.values.webm, true);
 
+const res3 = parse(['--fps','30','--no-audio','--wasm']);
+assert.strictEqual(res3.values.fps, '30');
+assert.strictEqual(res3.values['no-audio'], true);
+assert.strictEqual(res3.values.wasm, true);
+
 console.log('j360-cli argument parsing ok');

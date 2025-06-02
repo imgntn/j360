@@ -1,11 +1,13 @@
 'use strict';
 import { WebMRecorder } from './WebMRecorder';
 import { CubemapToEquirectangular } from './CubemapToEquirectangular';
+import { FfmpegEncoder } from './FfmpegEncoder';
 
 export class J360App {
   private jpegWorker = new Worker(new URL('./convertWorker.ts', import.meta.url), { type: 'module' });
   private capturer360 = new CCapture({ format: 'threesixty', display: true, autoSaveTime: 3 });
   private webmRecorder: WebMRecorder | null = null;
+  private ffmpegEncoder: FfmpegEncoder | null = null;
   private scene: any;
   private camera: any;
   private renderer: any;
@@ -33,10 +35,10 @@ export class J360App {
     this.capturer360.stop();
   };
 
-  private startWebMRecording = () => {
+  private startWebMRecording = (fps = 60, includeAudio = true) => {
     if (!this.webmRecorder) {
       const src = this.stereo ? this.equiManaged.getStereoCanvas() : (this.canvas as HTMLCanvasElement);
-      this.webmRecorder = new WebMRecorder(src as HTMLCanvasElement);
+      this.webmRecorder = new WebMRecorder(src as HTMLCanvasElement, fps, includeAudio);
     }
     this.webmRecorder.start();
   };
@@ -61,6 +63,20 @@ export class J360App {
     const buffer = await blob.arrayBuffer();
     this.webmRecorder = null;
     return buffer;
+  };
+
+  private startWasmRecording = async (fps = 60) => {
+    if (!this.ffmpegEncoder) {
+      this.ffmpegEncoder = new FfmpegEncoder(fps, 'mp4');
+      await this.ffmpegEncoder.init();
+    }
+  };
+
+  private stopWasmRecordingForCli = async () => {
+    if (!this.ffmpegEncoder) return null;
+    const data = await this.ffmpegEncoder.encode();
+    this.ffmpegEncoder = null;
+    return data.buffer;
   };
 
   private toggleStereo = () => {
@@ -191,6 +207,15 @@ export class J360App {
     } else {
       this.capturer360.capture(this.canvas as HTMLCanvasElement);
     }
+
+    if (this.ffmpegEncoder) {
+      this.equiManaged.preBlob(this.equiManaged.cubeCamera, this.camera, this.scene);
+      this.equiManaged.canvas.toBlob(async blob => {
+        if (!blob) return;
+        const buffer = await blob.arrayBuffer();
+        this.ffmpegEncoder!.addFrame(new Uint8Array(buffer));
+      }, 'image/jpeg');
+    }
   };
 
   private onWindowResize = () => {
@@ -209,6 +234,8 @@ export class J360App {
     (window as any).captureFrameAsync = this.captureFrameAsync;
     (window as any).enterVR = this.enterVR;
     (window as any).stopWebMRecordingForCli = this.stopWebMRecordingForCli;
+    (window as any).startWasmRecording = this.startWasmRecording;
+    (window as any).stopWasmRecordingForCli = this.stopWasmRecordingForCli;
   }
 }
 

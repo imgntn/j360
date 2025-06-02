@@ -59,6 +59,10 @@ runtime.
 
 ```equiManaged = new CubemapToEquirectangular(renderer, true, "4K");```
 
+The library will automatically fall back to the best resolution supported by
+your GPU. For example, if 8K is requested but not supported it will choose 4K
+or lower based on `MAX_CUBE_MAP_TEXTURE_SIZE` and `MAX_TEXTURE_SIZE`.
+
 
 Call the capture method at the end render loop, and give it your canvas.
 
@@ -97,15 +101,21 @@ interaction.
 `node tools/j360-cli.js [options] [output] [html]`
 
 The CLI now accepts options for resolution, stereo mode, frame count, and
-direct WebM output. Argument parsing uses Node's built in `parseArgs` library and
-the tool checks for required commands (`ffmpeg` and `tar`) before running. A
-simple progress indicator shows capture status. Example:
+direct WebM output. Additional flags include `--fps <n>` to control frame rate,
+`--no-audio` to disable microphone recording, and `--wasm` to encode video in
+the browser using ffmpeg.wasm. Argument parsing uses Node's built in
+`parseArgs` library and the tool checks for required commands (`ffmpeg` and
+`tar`) before running when not using `--wasm`. A simple progress indicator shows
+capture status. Example:
 
 ```bash
 node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html
 ```
 
 Use `--webm` to record directly to WebM instead of capturing JPEG frames.
+Use `--wasm` to encode the capture using ffmpeg.wasm (produces MP4) entirely in
+the browser. Frame rate and audio can be controlled with `--fps <n>` and
+`--no-audio` respectively.
 
 ## Stereo 360° Capture
 

@@ -1,12 +1,16 @@
 #!/usr/bin/env node
-'use strict';
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const { spawnSync } = require('child_process');
-const { parseArgs } = require('node:util');
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { spawnSync } from 'child_process';
+import { parseArgs } from 'node:util';
 
-function parse(argv = process.argv.slice(2)) {
+export interface Parsed {
+  values: ReturnType<typeof parseArgs>['values'];
+  positionals: string[];
+}
+
+export function parse(argv = process.argv.slice(2)): Parsed {
   const parsed = parseArgs({
     args: argv,
     options: {
@@ -27,15 +31,15 @@ async function run() {
   const { values, positionals } = parse();
   const output = positionals[0] || 'video.mp4';
   const html = positionals[1] || 'index.html';
-  const frames = parseInt(values.frames || '300', 10);
-  const resolution = values.resolution || '4K';
-  const stereo = !!values.stereo;
-  const useWebM = !!values.webm;
-  const useWasm = !!values.wasm;
-  const fps = parseInt(values.fps || '60', 10);
-  const includeAudio = !values['no-audio'];
+  const frames = parseInt((values as any).frames || '300', 10);
+  const resolution = (values as any).resolution || '4K';
+  const stereo = !!(values as any).stereo;
+  const useWebM = !!(values as any).webm;
+  const useWasm = !!(values as any).wasm;
+  const fps = parseInt((values as any).fps || '60', 10);
+  const includeAudio = !(values as any)['no-audio'];
 
-  function checkCmd(cmd) {
+  function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
     if (res.status !== 0) {
       throw new Error(`${cmd} not found in PATH`);
@@ -51,6 +55,7 @@ async function run() {
     console.error(String(e));
     process.exit(1);
   }
+
   const puppeteer = require('puppeteer');
   const url = 'file://' + path.resolve(html);
   const browser = await puppeteer.launch({ headless: true });
@@ -58,15 +63,15 @@ async function run() {
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
   await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio }) => {
-    const sel = document.getElementById('resolution');
+    const sel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (sel) sel.value = resolution;
-    if (stereo) window.toggleStereo();
+    if (stereo) (window as any).toggleStereo();
     if (useWebM) {
-      window.startWebMRecording(fps, includeAudio);
+      (window as any).startWebMRecording(fps, includeAudio);
     } else if (useWasm) {
-      window.startWasmRecording(fps);
+      (window as any).startWasmRecording(fps);
     } else {
-      window.startCapture360();
+      (window as any).startCapture360();
     }
   }, { resolution, stereo, useWebM, useWasm, fps, includeAudio });
 
@@ -80,7 +85,7 @@ async function run() {
   process.stdout.write('\rCapturing 100%\n');
 
   if (useWebM) {
-    const buffer = await page.evaluate(() => window.stopWebMRecordingForCli());
+    const buffer = await page.evaluate(() => (window as any).stopWebMRecordingForCli());
     await browser.close();
     if (!buffer) throw new Error('No WebM data received');
     fs.writeFileSync(output, Buffer.from(buffer));
@@ -89,7 +94,7 @@ async function run() {
   }
 
   if (useWasm) {
-    const buffer = await page.evaluate(() => window.stopWasmRecordingForCli());
+    const buffer = await page.evaluate(() => (window as any).stopWasmRecordingForCli());
     await browser.close();
     if (!buffer) throw new Error('No video data received');
     fs.writeFileSync(output, Buffer.from(buffer));
@@ -97,7 +102,7 @@ async function run() {
     return;
   }
 
-  await page.evaluate(() => window.stopCapture360());
+  await page.evaluate(() => (window as any).stopCapture360());
   await browser.close();
 
   const archives = fs.readdirSync(process.cwd()).filter(f => /^capture-.*\.tar$/.test(f));
@@ -153,5 +158,3 @@ async function run() {
 if (require.main === module) {
   run().catch(err => { console.error(err); process.exit(1); });
 }
-
-module.exports = { parse };

@@ -2,6 +2,7 @@ export declare class J360App {
     private jpegWorker;
     private capturer360;
     private webmRecorder;
+    private ffmpegEncoder;
     private scene;
     private camera;
     private renderer;
@@ -14,9 +15,11 @@ export declare class J360App {
     constructor();
     private startCapture360;
     private stopCapture360;
-    private startWebMRecording;
-    private stopWebMRecording;
-    private stopWebMRecordingForCli;
+    private startWebMRecording: (fps?: number, includeAudio?: boolean) => void;
+    private stopWebMRecording: () => Promise<void>;
+    private stopWebMRecordingForCli: () => Promise<ArrayBuffer | null>;
+    private startWasmRecording: (fps?: number) => Promise<void>;
+    private stopWasmRecordingForCli: () => Promise<ArrayBuffer | null>;
     private toggleStereo;
     private enterVR;
     private captureFrameAsync;
