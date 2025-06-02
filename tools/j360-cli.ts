@@ -20,7 +20,9 @@ export function parse(argv = process.argv.slice(2)): Parsed {
       webm: { type: 'boolean', short: 'w' },
       wasm: { type: 'boolean' },
       fps: { type: 'string' },
-      'no-audio': { type: 'boolean' }
+      'no-audio': { type: 'boolean' },
+      stream: { type: 'boolean' },
+      'signal-url': { type: 'string' }
     },
     allowPositionals: true
   });
@@ -38,6 +40,8 @@ async function run() {
   const useWasm = !!(values as any).wasm;
   const fps = parseInt((values as any).fps || '60', 10);
   const includeAudio = !(values as any)['no-audio'];
+  const stream = !!(values as any).stream;
+  const signalUrl = (values as any)['signal-url'] || 'http://localhost:3000';
 
   function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
@@ -62,7 +66,7 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl }) => {
     const sel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (sel) sel.value = resolution;
     if (stereo) (window as any).toggleStereo();
@@ -73,7 +77,10 @@ async function run() {
     } else {
       (window as any).startCapture360();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio });
+    if (stream) {
+      (window as any).startStreaming(signalUrl);
+    }
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
@@ -102,7 +109,10 @@ async function run() {
     return;
   }
 
-  await page.evaluate(() => (window as any).stopCapture360());
+  await page.evaluate(() => {
+    (window as any).stopCapture360();
+    if ((window as any).stopStreaming) (window as any).stopStreaming();
+  });
   await browser.close();
 
   const archives = fs.readdirSync(process.cwd()).filter(f => /^capture-.*\.tar$/.test(f));

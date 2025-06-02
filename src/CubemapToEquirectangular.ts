@@ -13,6 +13,7 @@ export class CubemapToEquirectangular {
   attachedCamera: any = null;
   stereoCanvas: HTMLCanvasElement | null = null;
   worker: Worker;
+  useWebGPU: boolean;
   cubeMapSize: number;
   maxTextureSize: number;
 
@@ -20,8 +21,9 @@ export class CubemapToEquirectangular {
     const gl = this.renderer.getContext();
     const cubeSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE);
     const texSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-    const prefs = preferred ? [preferred.toUpperCase(), '8K', '4K', '2K', '1K'] : ['8K', '4K', '2K', '1K'];
+    const prefs = preferred ? [preferred.toUpperCase(), '16K', '12K', '8K', '4K', '2K', '1K'] : ['16K', '12K', '8K', '4K', '2K', '1K'];
     for (const res of prefs) {
+      if ((res === '16K' || res === '12K') && (navigator as any).gpu) return res;
       if (res === '8K' && cubeSize >= 4096 && texSize >= 8192) return '8K';
       if (res === '4K' && cubeSize >= 2048 && texSize >= 4096) return '4K';
       if (res === '2K' && cubeSize >= 1024 && texSize >= 2048) return '2K';
@@ -76,6 +78,7 @@ void main()  {
   constructor(renderer: any, provideCubeCamera = true, resolution = '4K') {
     this.renderer = renderer;
     resolution = this.selectBestResolution(resolution);
+    this.useWebGPU = (resolution === '16K' || resolution === '12K') && !!(navigator as any).gpu;
 
     this.worker = new Worker(new URL('./equirectWorker.ts', import.meta.url), { type: 'module' });
 
@@ -99,7 +102,11 @@ void main()  {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d');
 
-    if (resolution === '8K') {
+    if (resolution === '16K') {
+      this.setSize(16384, 8192);
+    } else if (resolution === '12K') {
+      this.setSize(12288, 6144);
+    } else if (resolution === '8K') {
       this.setSize(8192, 4096);
     } else if (resolution === '4K') {
       this.setSize(4096, 2048);
@@ -115,7 +122,11 @@ void main()  {
     this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
     if (provideCubeCamera) {
-      if (resolution === '8K') {
+      if (resolution === '16K') {
+        this.getCubeCamera(8192);
+      } else if (resolution === '12K') {
+        this.getCubeCamera(6144);
+      } else if (resolution === '8K') {
         this.getCubeCamera(4096);
       } else if (resolution === '4K') {
         this.getCubeCamera(2048);
@@ -169,7 +180,13 @@ void main()  {
     resolution = this.selectBestResolution(resolution || '4K');
 
     let cubeSize: number;
-    if (resolution === '8K') {
+    if (resolution === '16K') {
+      this.setSize(16384, 8192);
+      cubeSize = 8192;
+    } else if (resolution === '12K') {
+      this.setSize(12288, 6144);
+      cubeSize = 6144;
+    } else if (resolution === '8K') {
       this.setSize(8192, 4096);
       cubeSize = 4096;
     } else if (resolution === '4K') {
@@ -195,6 +212,10 @@ void main()  {
   }
 
   convert(cubeCamera: any) {
+    if (this.useWebGPU) {
+      console.warn('WebGPU conversion not fully implemented');
+      return;
+    }
     this.quad.material.uniforms.map.value = cubeCamera.renderTarget.texture;
     this.renderer.render(this.scene, this.camera, this.output, true);
 

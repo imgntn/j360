@@ -2,6 +2,7 @@
 import { WebMRecorder } from './WebMRecorder';
 import { CubemapToEquirectangular } from './CubemapToEquirectangular';
 import { FfmpegEncoder } from './FfmpegEncoder';
+import { WebRTCStreamer } from './WebRTCStreamer';
 
 export class J360App {
   private jpegWorker = new Worker(new URL('./convertWorker.ts', import.meta.url), { type: 'module' });
@@ -17,6 +18,7 @@ export class J360App {
   private meshes: any[] = [];
   private stereo = false;
   private vrSession: XRSession | null = null;
+  private streamer: WebRTCStreamer | null = null;
 
   constructor() {
     this.init();
@@ -77,6 +79,19 @@ export class J360App {
     const data = await this.ffmpegEncoder.encode();
     this.ffmpegEncoder = null;
     return data.buffer;
+  };
+
+  private startStreaming = (signalUrl: string) => {
+    if (!this.canvas) return;
+    this.streamer = new WebRTCStreamer(this.canvas, msg => {
+      fetch(signalUrl, { method: 'POST', body: JSON.stringify(msg) }).catch(() => {});
+    });
+    this.streamer.start();
+  };
+
+  private stopStreaming = () => {
+    this.streamer?.stop();
+    this.streamer = null;
   };
 
   private toggleStereo = () => {
@@ -236,6 +251,8 @@ export class J360App {
     (window as any).stopWebMRecordingForCli = this.stopWebMRecordingForCli;
     (window as any).startWasmRecording = this.startWasmRecording;
     (window as any).stopWasmRecordingForCli = this.stopWasmRecordingForCli;
+    (window as any).startStreaming = this.startStreaming;
+    (window as any).stopStreaming = this.stopStreaming;
   }
 }
 
