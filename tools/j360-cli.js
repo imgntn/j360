@@ -4,29 +4,36 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { parseArgs } = require('node:util');
 const puppeteer = require('puppeteer');
 
-function parseArgs(argv) {
-  const args = { _: [] };
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith('--')) {
-      const key = a.slice(2);
-      const next = argv[i + 1];
-      if (next && !next.startsWith('--')) {
-        args[key] = next;
-        i++;
-      } else {
-        args[key] = true;
-      }
-    } else {
-      args._.push(a);
-    }
-  }
-  return args;
-}
+const parsed = parseArgs({
+  args: process.argv.slice(2),
+  options: {
+    frames: { type: 'string', short: 'f' },
+    resolution: { type: 'string', short: 'r' },
+    stereo: { type: 'boolean', short: 's' },
+    webm: { type: 'boolean', short: 'w' }
+  },
+  allowPositionals: true
+});
 
-const args = parseArgs(process.argv);
+const values = parsed.values;
+const positionals = parsed.positionals;
+
+const output = positionals[0] || 'video.mp4';
+const html = positionals[1] || 'index.html';
+const frames = parseInt(values.frames || '300', 10);
+const resolution = values.resolution || '4K';
+const stereo = !!values.stereo;
+const useWebM = !!values.webm;
+
+function checkCmd(cmd) {
+  const res = spawnSync('which', [cmd]);
+  if (res.status !== 0) {
+    throw new Error(`${cmd} not found in PATH`);
+  }
+}
 
 const output = args._[0] || 'video.mp4';
 const html = args._[1] || 'index.html';
@@ -36,6 +43,13 @@ const stereo = !!args.stereo;
 const useWebM = !!args.webm;
 
 async function run() {
+  try {
+    checkCmd('tar');
+    checkCmd('ffmpeg');
+  } catch (e) {
+    console.error(String(e));
+    process.exit(1);
+  }
   const url = 'file://' + path.resolve(html);
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
@@ -55,10 +69,11 @@ async function run() {
   const durationMs = (frames / 60) * 1000;
   const step = 1000;
   for (let t = 0; t < durationMs; t += step) {
-    process.stdout.write('.');
+    const percent = Math.floor((t / durationMs) * 100);
+    process.stdout.write(`\rCapturing ${percent}%`);
     await page.waitForTimeout(step);
   }
-  process.stdout.write('\n');
+  process.stdout.write('\rCapturing 100%\n');
 
   if (useWebM) {
     const buffer = await page.evaluate(() => window.stopWebMRecordingForCli());
@@ -81,7 +96,8 @@ async function run() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'j360-'));
   console.log(`Extracting archives to ${tmpDir}`);
   archives.forEach((archive, idx) => {
-    console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
+    const label = `[${idx + 1}/${archives.length}] ${archive}`;
+    process.stdout.write(label + '\n');
     const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
     if (res.status !== 0) process.exit(res.status);
   });

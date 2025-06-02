@@ -1,1 +1,32 @@
-declare function CubemapToEquirectangular(renderer: any, provideCubeCamera: any, resolution: any): void;
+export declare class CubemapToEquirectangular {
+    width: number;
+    height: number;
+    renderer: any;
+    material: any;
+    scene: any;
+    quad: any;
+    camera: any;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D | null;
+    cubeCamera: any;
+    cubeCameraR: any;
+    attachedCamera: any;
+    stereoCanvas: HTMLCanvasElement | null;
+    cubeMapSize: number;
+    maxTextureSize: number;
+    vertexShader: string;
+    fragmentShader: string;
+    constructor(renderer: any, provideCubeCamera?: boolean, resolution?: string);
+    setSize(width: number, height: number): void;
+    output: any;
+    getCubeCamera(size?: number): any;
+    getCubeCameraR(size?: number): any;
+    setResolution(resolution: string, updateCamera?: boolean): void;
+    attachCubeCamera(camera: any): void;
+    convert(cubeCamera: any): void;
+    convertStereo(leftCamera: any, rightCamera: any): HTMLCanvasElement;
+    getStereoCanvas(): HTMLCanvasElement;
+    preBlob(cubeCamera: any, camera: any, scene: any): void;
+    update(camera: any, scene: any): void;
+    updateStereo(camera: any, scene: any, eyeOffset?: number): HTMLCanvasElement;
+}
