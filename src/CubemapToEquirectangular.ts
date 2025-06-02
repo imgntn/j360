@@ -16,6 +16,20 @@ export class CubemapToEquirectangular {
   cubeMapSize: number;
   maxTextureSize: number;
 
+  selectBestResolution(preferred: string) {
+    const gl = this.renderer.getContext();
+    const cubeSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE);
+    const texSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const prefs = preferred ? [preferred.toUpperCase(), '8K', '4K', '2K', '1K'] : ['8K', '4K', '2K', '1K'];
+    for (const res of prefs) {
+      if (res === '8K' && cubeSize >= 4096 && texSize >= 8192) return '8K';
+      if (res === '4K' && cubeSize >= 2048 && texSize >= 4096) return '4K';
+      if (res === '2K' && cubeSize >= 1024 && texSize >= 2048) return '2K';
+      if (res === '1K') return '1K';
+    }
+    return '1K';
+  }
+
   vertexShader = `
 attribute vec3 position;
 attribute vec2 uv;
@@ -61,7 +75,7 @@ void main()  {
 
   constructor(renderer: any, provideCubeCamera = true, resolution = '4K') {
     this.renderer = renderer;
-    resolution = resolution.toUpperCase();
+    resolution = this.selectBestResolution(resolution);
 
     this.worker = new Worker(new URL('./equirectWorker.ts', import.meta.url), { type: 'module' });
 
@@ -99,12 +113,6 @@ void main()  {
     const gl = this.renderer.getContext();
     this.cubeMapSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE);
     this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-
-    if (resolution === '8K' && (this.cubeMapSize < 4096 || this.maxTextureSize < 8192)) {
-      console.warn('8K capture not supported by this GPU, falling back to 4K');
-      resolution = '4K';
-      this.setSize(4096, 2048);
-    }
 
     if (provideCubeCamera) {
       if (resolution === '8K') {
@@ -158,11 +166,7 @@ void main()  {
   }
 
   setResolution(resolution: string, updateCamera?: boolean) {
-    resolution = (resolution || '4K').toUpperCase();
-    if (resolution === '8K' && (this.cubeMapSize < 4096 || this.maxTextureSize < 8192)) {
-      console.warn('8K capture not supported by this GPU, falling back to 4K');
-      resolution = '4K';
-    }
+    resolution = this.selectBestResolution(resolution || '4K');
 
     let cubeSize: number;
     if (resolution === '8K') {

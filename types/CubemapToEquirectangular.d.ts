@@ -17,6 +17,7 @@ export declare class CubemapToEquirectangular {
     vertexShader: string;
     fragmentShader: string;
     constructor(renderer: any, provideCubeCamera?: boolean, resolution?: string);
+    selectBestResolution(preferred: string): string;
     setSize(width: number, height: number): void;
     output: any;
     getCubeCamera(size?: number): any;
