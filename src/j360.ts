@@ -74,9 +74,9 @@ export class J360App {
     }
   };
 
-  private stopWasmRecordingForCli = async () => {
+  private stopWasmRecordingForCli = async (progress?: (p: number) => void) => {
     if (!this.ffmpegEncoder) return null;
-    const data = await this.ffmpegEncoder.encode();
+    const data = await this.ffmpegEncoder.encode(progress);
     this.ffmpegEncoder = null;
     return data.buffer;
   };

@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "node test/j360-cli.test.js",
+    "test": "node test/j360-cli.test.js && node test/ffmpeg-encoder.test.js",
     "serve": "vite preview",
     "headless": "node tools/headless-capture.js",
-    "cli": "node tools/j360-cli.js"
+    "cli": "node tools/j360-cli.js",
+    "signaling": "node tools/signaling-server.js"
   },
   "dependencies": {
     "three": "^0.161.0",
