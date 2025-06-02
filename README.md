@@ -82,16 +82,39 @@ Call `startWebMRecording()` and `stopWebMRecording()` to record the canvas
 to a WebM file using WebCodecs. When stopped a WebM file will download
 automatically eliminating the external `ffmpeg` step.
 
+Use `captureFrameAsync()` to grab a single JPEG without blocking the main
+thread. The encoding work happens in a Web Worker so interactive scenes stay
+smooth even at high resolutions.
+
 ## Headless Rendering
 
 Run `npm run headless` to launch a Puppeteer instance that captures a scene
 and invokes `tools/create-video.js` to build a video without any browser
 interaction.
 
+### Command Line Interface
+
+`node tools/j360-cli.js [options] [output] [html]`
+
+The CLI now accepts options for resolution, stereo mode, frame count, and
+direct WebM output. Example:
+
+```bash
+node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html
+```
+
+Use `--webm` to record directly to WebM instead of capturing JPEG frames.
+
 ## Stereo 360° Capture
 
 Toggle stereo mode at runtime with `toggleStereo()`. When enabled the output
 frames contain left and right eye views side‑by‑side for VR playback.
+
+### WebXR Preview
+
+Use the "Enter VR" button to view the scene in a compatible headset before
+exporting. This is useful for verifying stereo alignment and overall scene
+composition.
 
 # Unarchive, Convert, and Add Metadata
 

@@ -6,7 +6,34 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const puppeteer = require('puppeteer');
 
-const [output = 'video.mp4', html = 'index.html', frames = '300'] = process.argv.slice(2);
+function parseArgs(argv) {
+  const args = { _: [] };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const key = a.slice(2);
+      const next = argv[i + 1];
+      if (next && !next.startsWith('--')) {
+        args[key] = next;
+        i++;
+      } else {
+        args[key] = true;
+      }
+    } else {
+      args._.push(a);
+    }
+  }
+  return args;
+}
+
+const args = parseArgs(process.argv);
+
+const output = args._[0] || 'video.mp4';
+const html = args._[1] || 'index.html';
+const frames = parseInt(args.frames || '300', 10);
+const resolution = args.resolution || '4K';
+const stereo = !!args.stereo;
+const useWebM = !!args.webm;
 
 async function run() {
   const url = 'file://' + path.resolve(html);
@@ -14,9 +41,34 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(() => window.startCapture360());
-  const durationMs = (parseInt(frames, 10) / 60) * 1000;
-  await page.waitForTimeout(durationMs);
+  await page.evaluate(({ resolution, stereo, useWebM }) => {
+    const sel = document.getElementById('resolution');
+    if (sel) sel.value = resolution;
+    if (stereo) window.toggleStereo();
+    if (useWebM) {
+      window.startWebMRecording();
+    } else {
+      window.startCapture360();
+    }
+  }, { resolution, stereo, useWebM });
+
+  const durationMs = (frames / 60) * 1000;
+  const step = 1000;
+  for (let t = 0; t < durationMs; t += step) {
+    process.stdout.write('.');
+    await page.waitForTimeout(step);
+  }
+  process.stdout.write('\n');
+
+  if (useWebM) {
+    const buffer = await page.evaluate(() => window.stopWebMRecordingForCli());
+    await browser.close();
+    if (!buffer) throw new Error('No WebM data received');
+    fs.writeFileSync(output, Buffer.from(buffer));
+    console.log('Saved WebM to', output);
+    return;
+  }
+
   await page.evaluate(() => window.stopCapture360());
   await browser.close();
 

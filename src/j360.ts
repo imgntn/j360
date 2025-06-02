@@ -1,6 +1,11 @@
 'use strict';
 import { WebMRecorder } from './WebMRecorder';
 
+// worker for JPEG encoding
+const jpegWorker = new Worker(new URL('./convertWorker.ts', import.meta.url), {
+  type: 'module'
+});
+
 // Create a capturer that exports Equirectangular 360 JPG images in a TAR file
 const capturer360 = new CCapture({
     format: 'threesixty',
@@ -43,8 +48,60 @@ const stopWebMRecording = async () => {
     webmRecorder = null;
 };
 
+const stopWebMRecordingForCli = async () => {
+    if (!webmRecorder) return null;
+    const blob = await webmRecorder.stop();
+    const buffer = await blob.arrayBuffer();
+    webmRecorder = null;
+    return buffer;
+};
+
 const toggleStereo = () => {
     stereo = !stereo;
+};
+
+const enterVR = async () => {
+    if (!navigator.xr) return;
+    if (vrSession) {
+        vrSession.end();
+        vrSession = null;
+        return;
+    }
+    try {
+        vrSession = await navigator.xr.requestSession('immersive-vr');
+        renderer.xr.enabled = true;
+        renderer.xr.setSession(vrSession);
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+const captureFrameAsync = () => {
+    return new Promise<void>((resolve, reject) => {
+        if (!equiManaged) return resolve();
+        equiManaged.preBlob(equiManaged.cubeCamera, camera, scene);
+        const { width, height, ctx } = equiManaged;
+        const data = ctx.getImageData(0, 0, width, height).data;
+        jpegWorker.onmessage = (e: MessageEvent) => {
+            if (e.data.error) {
+                reject(e.data.error);
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = e.data.url;
+            a.download = 'frame-' + Date.now() + '.jpg';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            resolve();
+        };
+        jpegWorker.postMessage({
+            width,
+            height,
+            pixels: data.buffer
+        }, [data.buffer]);
+    });
 };
 
 let scene, camera, renderer;
@@ -53,6 +110,7 @@ const meshes = [];
 let controls;
 let equiManaged;
 let stereo = false;
+let vrSession: XRSession | null = null;
 const locationNames = ['top', 'bottom', 'front', 'behind', 'left', 'right'];
 
 const init = () => {
@@ -155,3 +213,6 @@ window.stopCapture360 = stopCapture360;
 window.startWebMRecording = startWebMRecording;
 window.stopWebMRecording = stopWebMRecording;
 window.toggleStereo = toggleStereo;
+window.captureFrameAsync = captureFrameAsync;
+window.enterVR = enterVR;
+window.stopWebMRecordingForCli = stopWebMRecordingForCli;

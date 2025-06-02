@@ -5,5 +5,14 @@ interface Window {
   stopCapture360: () => void;
   startWebMRecording: () => void;
   stopWebMRecording: () => Promise<void>;
+  stopWebMRecordingForCli: () => Promise<ArrayBuffer | null>;
   toggleStereo: () => void;
+  captureFrameAsync: () => Promise<void>;
+  enterVR: () => void;
 }
+
+interface Navigator {
+  xr?: any;
+}
+
+type XRSession = any;
