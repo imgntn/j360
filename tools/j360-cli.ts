@@ -101,7 +101,13 @@ async function run() {
   }
 
   if (useWasm) {
-    const buffer = await page.evaluate(() => (window as any).stopWasmRecordingForCli());
+    await page.exposeFunction('ffmpegProgress', (p: number) => {
+      process.stdout.write(`\rEncoding ${p}%`);
+    });
+    const buffer = await page.evaluate(() =>
+      (window as any).stopWasmRecordingForCli((p: number) => (window as any).ffmpegProgress(p))
+    );
+    process.stdout.write('\rEncoding 100%\n');
     await browser.close();
     if (!buffer) throw new Error('No video data received');
     fs.writeFileSync(output, Buffer.from(buffer));

@@ -111,7 +111,8 @@ the browser using ffmpeg.wasm. Use `--stream` with `--signal-url` to broadcast a
 WebRTC preview while capturing. Argument parsing uses Node's built in
 `parseArgs` library. When available, the CLI automatically uses `ffmpeg-static`
 and `tar-stream` instead of shelling out to external commands. A simple progress
-indicator shows capture status. Example:
+indicator shows capture status and, when using `--wasm`, encoding progress as
+well. Example:
 
 ```bash
 node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html
@@ -137,8 +138,11 @@ alignment and overall scene composition.
 ### Live Streaming
 
 Call `startStreaming(url)` to send the canvas over WebRTC to a signaling server.
-`stopStreaming()` ends the connection. The CLI exposes `--stream` and
-`--signal-url` to automate remote preview from headless mode.
+`stopStreaming()` ends the connection. A simple signaling server is provided in
+`tools/signaling-server.js` and can be started with `npm run signaling`. Use its
+URL with `--signal-url` or `startStreaming()` to preview remotely. The CLI
+exposes `--stream` and `--signal-url` to automate remote preview from headless
+mode.
 
 # Unarchive, Convert, and Add Metadata
 

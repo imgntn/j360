@@ -15,8 +15,14 @@ export class FfmpegEncoder {
     this.frames.push(data);
   }
 
-  async encode(): Promise<Uint8Array> {
+  async encode(onProgress?: (percent: number) => void): Promise<Uint8Array> {
     const { ffmpeg, fps, format } = this;
+    if (onProgress) {
+      ffmpeg.setProgress(({ ratio }) => {
+        const pct = Math.min(100, Math.round(ratio * 100));
+        onProgress(pct);
+      });
+    }
     for (let i = 0; i < this.frames.length; i++) {
       ffmpeg.FS('writeFile', `${i}.jpg`, this.frames[i]);
     }
