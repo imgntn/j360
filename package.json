@@ -13,7 +13,10 @@
   "dependencies": {
     "three": "^0.161.0",
     "ccapture.js": "^1.1.0",
-    "@ffmpeg/ffmpeg": "^0.12.4"
+    "@ffmpeg/ffmpeg": "^0.12.4",
+    "ffmpeg-static": "^5.1.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "tar-stream": "^2.2.0"
   },
   "devDependencies": {
     "vite": "^4.5.0",

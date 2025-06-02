@@ -90,6 +90,10 @@ Use `captureFrameAsync()` to grab a single JPEG without blocking the main
 thread. The encoding work happens in a Web Worker so interactive scenes stay
 smooth even at high resolutions.
 
+When WebGPU is available the library can output equirectangular frames at
+**16K** and **12K** resolutions. The converter automatically selects WebGPU when
+these ultra high resolutions are requested.
+
 ## Headless Rendering
 
 Run `npm run headless` to launch a Puppeteer instance that captures a scene
@@ -103,10 +107,11 @@ interaction.
 The CLI now accepts options for resolution, stereo mode, frame count, and
 direct WebM output. Additional flags include `--fps <n>` to control frame rate,
 `--no-audio` to disable microphone recording, and `--wasm` to encode video in
-the browser using ffmpeg.wasm. Argument parsing uses Node's built in
-`parseArgs` library and the tool checks for required commands (`ffmpeg` and
-`tar`) before running when not using `--wasm`. A simple progress indicator shows
-capture status. Example:
+the browser using ffmpeg.wasm. Use `--stream` with `--signal-url` to broadcast a
+WebRTC preview while capturing. Argument parsing uses Node's built in
+`parseArgs` library. When available, the CLI automatically uses `ffmpeg-static`
+and `tar-stream` instead of shelling out to external commands. A simple progress
+indicator shows capture status. Example:
 
 ```bash
 node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html
@@ -128,6 +133,12 @@ Use the "Enter VR" button to view the scene in a compatible headset before
 exporting. When in VR a small on-screen overlay lets you exit or begin
 recording without removing the headset. This is useful for verifying stereo
 alignment and overall scene composition.
+
+### Live Streaming
+
+Call `startStreaming(url)` to send the canvas over WebRTC to a signaling server.
+`stopStreaming()` ends the connection. The CLI exposes `--stream` and
+`--signal-url` to automate remote preview from headless mode.
 
 # Unarchive, Convert, and Add Metadata
 

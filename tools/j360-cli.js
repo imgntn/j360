@@ -16,7 +16,9 @@ function parse(argv = process.argv.slice(2)) {
       webm: { type: 'boolean', short: 'w' },
       wasm: { type: 'boolean' },
       fps: { type: 'string' },
-      'no-audio': { type: 'boolean' }
+      'no-audio': { type: 'boolean' },
+      stream: { type: 'boolean' },
+      'signal-url': { type: 'string' }
     },
     allowPositionals: true
   });
@@ -34,6 +36,8 @@ async function run() {
   const useWasm = !!values.wasm;
   const fps = parseInt(values.fps || '60', 10);
   const includeAudio = !values['no-audio'];
+  const stream = !!values.stream;
+  const signalUrl = values['signal-url'] || 'http://localhost:3000';
 
   function checkCmd(cmd) {
     const res = spawnSync('which', [cmd]);
@@ -44,8 +48,13 @@ async function run() {
 
   try {
     if (!useWasm) {
-      checkCmd('tar');
-      checkCmd('ffmpeg');
+      try {
+        require('tar-stream');
+        require('ffmpeg-static');
+      } catch {
+        checkCmd('tar');
+        checkCmd('ffmpeg');
+      }
     }
   } catch (e) {
     console.error(String(e));
@@ -57,7 +66,7 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl }) => {
     const sel = document.getElementById('resolution');
     if (sel) sel.value = resolution;
     if (stereo) window.toggleStereo();
@@ -68,7 +77,10 @@ async function run() {
     } else {
       window.startCapture360();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio });
+    if (stream) {
+      window.startStreaming(signalUrl);
+    }
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
@@ -97,7 +109,7 @@ async function run() {
     return;
   }
 
-  await page.evaluate(() => window.stopCapture360());
+  await page.evaluate(() => { window.stopCapture360(); if (window.stopStreaming) window.stopStreaming(); });
   await browser.close();
 
   const archives = fs.readdirSync(process.cwd()).filter(f => /^capture-.*\.tar$/.test(f));
@@ -108,19 +120,31 @@ async function run() {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'j360-'));
   console.log(`Extracting archives to ${tmpDir}`);
-  archives.forEach((archive, idx) => {
-    const label = `[${idx + 1}/${archives.length}] ${archive}`;
-    process.stdout.write(label + '\n');
-    const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
-    if (res.status !== 0) process.exit(res.status);
-  });
+  let tarExtract;
+  try { tarExtract = require('tar-stream').extract(); } catch {}
+  if (tarExtract) {
+    const extract = require('tar-stream').extract();
+    const pipeline = require('stream').pipeline;
+    const fsSync = require('fs');
+    await Promise.all(archives.map(a => new Promise((resolve, reject) => {
+      pipeline(fsSync.createReadStream(a), extract, err => err ? reject(err) : resolve());
+    })));
+  } else {
+    archives.forEach((archive, idx) => {
+      const label = `[${idx + 1}/${archives.length}] ${archive}`;
+      process.stdout.write(label + '\n');
+      const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
+      if (res.status !== 0) process.exit(res.status);
+    });
+  }
 
   const frameCount = fs.readdirSync(tmpDir).filter(f => f.endsWith('.jpg')).length;
   console.log(`Found ${frameCount} frames`);
 
+  const ffmpegPath = (() => { try { return require('ffmpeg-static'); } catch { return 'ffmpeg'; }})();
   const ffmpegArgs = ['-y', '-framerate', String(fps), '-i', path.join(tmpDir, '%07d.jpg'), output];
   console.log(`Running ffmpeg ${ffmpegArgs.join(' ')}`);
-  let res = spawnSync('ffmpeg', ffmpegArgs, { stdio: 'inherit' });
+  let res = spawnSync(ffmpegPath, ffmpegArgs, { stdio: 'inherit' });
   if (res.status !== 0) {
     console.error('ffmpeg failed');
     process.exit(res.status);

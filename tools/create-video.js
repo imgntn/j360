@@ -18,22 +18,34 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'j360-'));
 
 console.log(`Extracting archives to ${tmpDir}`);
 
-archives.forEach((archive, idx) => {
-  console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
-  const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
-  if (res.status !== 0) {
-    console.error(`Failed to extract ${archive}`);
-    process.exit(res.status);
-  }
-});
+let tarExtract;
+try { tarExtract = require('tar-stream').extract(); } catch {}
+if (tarExtract) {
+  const extract = require('tar-stream').extract();
+  const pipeline = require('stream').pipeline;
+  const fsSync = require('fs');
+  Promise.all(archives.map(a => new Promise((resolve, reject) => {
+    pipeline(fsSync.createReadStream(a), extract, err => err ? reject(err) : resolve());
+  }))).then(() => {}).catch(() => process.exit(1));
+} else {
+  archives.forEach((archive, idx) => {
+    console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
+    const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
+    if (res.status !== 0) {
+      console.error(`Failed to extract ${archive}`);
+      process.exit(res.status);
+    }
+  });
+}
 
 const frameCount = fs.readdirSync(tmpDir).filter(f => f.endsWith('.jpg')).length;
 console.log(`Found ${frameCount} frames`);
 
 
+const ffmpegPath = (() => { try { return require('ffmpeg-static'); } catch { return 'ffmpeg'; }})();
 const ffmpegArgs = ['-y', '-i', path.join(tmpDir, '%07d.jpg'), output];
 console.log(`Running ffmpeg ${ffmpegArgs.join(' ')}`);
-let res = spawnSync('ffmpeg', ffmpegArgs, { stdio: 'inherit' });
+let res = spawnSync(ffmpegPath, ffmpegArgs, { stdio: 'inherit' });
 if (res.status !== 0) {
   console.error('ffmpeg failed');
   process.exit(res.status);
