@@ -5,8 +5,9 @@
     "moduleResolution": "node",
     "strict": false,
     "declaration": true,
-    "emitDeclarationOnly": true,
-    "outDir": "types"
+    "outDir": "dist",
+    "declarationDir": "types",
+    "rootDir": "src"
   },
   "include": ["src/**/*.ts"],
   "files": ["src/global.d.ts"]

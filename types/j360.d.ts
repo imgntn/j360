@@ -1,1 +1,31 @@
-export {};
+export declare class J360App {
+    private jpegWorker;
+    private capturer360;
+    private webmRecorder;
+    private scene;
+    private camera;
+    private renderer;
+    private canvas;
+    private controls;
+    private equiManaged;
+    private meshes;
+    private stereo;
+    private vrSession;
+    constructor();
+    private startCapture360;
+    private stopCapture360;
+    private startWebMRecording;
+    private stopWebMRecording;
+    private stopWebMRecordingForCli;
+    private toggleStereo;
+    private enterVR;
+    private captureFrameAsync;
+    private init;
+    private placeObjectsAroundYou;
+    private locationNames;
+    private makeSingleObject;
+    private animate;
+    private onWindowResize;
+    bindWindow(): void;
+}
+export declare const j360App: J360App;

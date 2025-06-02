@@ -97,7 +97,9 @@ interaction.
 `node tools/j360-cli.js [options] [output] [html]`
 
 The CLI now accepts options for resolution, stereo mode, frame count, and
-direct WebM output. Example:
+direct WebM output. Argument parsing uses Node's built in `parseArgs` library and
+the tool checks for required commands (`ffmpeg` and `tar`) before running. A
+simple progress indicator shows capture status. Example:
 
 ```bash
 node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html
@@ -113,8 +115,9 @@ frames contain left and right eye views side‑by‑side for VR playback.
 ### WebXR Preview
 
 Use the "Enter VR" button to view the scene in a compatible headset before
-exporting. This is useful for verifying stereo alignment and overall scene
-composition.
+exporting. When in VR a small on-screen overlay lets you exit or begin
+recording without removing the headset. This is useful for verifying stereo
+alignment and overall scene composition.
 
 # Unarchive, Convert, and Add Metadata
 
