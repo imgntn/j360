@@ -5,11 +5,30 @@ export class FfmpegEncoder {
   private frames: Uint8Array[] = [];
   private chunks: Uint8Array[] = [];
   private chunkSize = 60;
-  constructor(private fps = 60, private format: 'mp4' | 'webm' = 'mp4', private incremental = false) {}
+  private audioRec: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private audioData: Uint8Array | null = null;
+  constructor(
+    private fps = 60,
+    private format: 'mp4' | 'webm' = 'mp4',
+    private incremental = false,
+    private includeAudio = false,
+    private extAudioData: Uint8Array | null = null
+  ) {}
 
   async init() {
     if (!this.ffmpeg.isLoaded()) {
       await this.ffmpeg.load();
+    }
+    if (this.includeAudio && !this.extAudioData && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.audioRec = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        this.audioRec.ondataavailable = e => { if (e.data.size > 0) this.audioChunks.push(e.data); };
+        this.audioRec.start();
+      } catch {
+        console.warn('Microphone unavailable');
+      }
     }
   }
 
@@ -44,6 +63,18 @@ export class FfmpegEncoder {
         onProgress(pct);
       });
     }
+    if (this.audioRec) {
+      this.audioData = await new Promise(resolve => {
+        this.audioRec!.onstop = () => {
+          const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+          blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+        };
+        this.audioRec!.stop();
+      });
+    }
+    if (this.extAudioData) {
+      this.audioData = this.extAudioData;
+    }
     if (this.incremental) {
       if (this.frames.length) {
         await this.encodeChunk();
@@ -76,9 +107,16 @@ export class FfmpegEncoder {
         ffmpeg.FS('writeFile', `${i}.jpg`, this.frames[i]);
       }
       const out = `out.${format}`;
-      await ffmpeg.run('-framerate', String(fps), '-i', '%d.jpg', '-pix_fmt', 'yuv420p', out);
+      const args = ['-framerate', String(fps), '-i', '%d.jpg'];
+      if (this.audioData) {
+        ffmpeg.FS('writeFile', 'audio.webm', this.audioData);
+        args.push('-i', 'audio.webm', '-shortest');
+      }
+      args.push('-pix_fmt', 'yuv420p', out);
+      await ffmpeg.run(...args);
       const data = ffmpeg.FS('readFile', out);
       ffmpeg.FS('unlink', out);
+      if (this.audioData) ffmpeg.FS('unlink', 'audio.webm');
       for (let i = 0; i < this.frames.length; i++) {
         ffmpeg.FS('unlink', `${i}.jpg`);
       }

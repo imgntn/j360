@@ -86,6 +86,13 @@ Call `startWebMRecording()` and `stopWebMRecording()` to record the canvas
 to a WebM file using WebCodecs. When stopped a WebM file will download
 automatically eliminating the external `ffmpeg` step.
 
+### WebCodecs Recorder
+
+Call `startWebCodecsRecording()` and `stopWebCodecsRecording()` for a lower
+latency capture path based on the WebCodecs API. When supported this records
+directly to VP9 with optional microphone audio. Browsers without WebCodecs
+fall back to the MediaRecorder based `WebMRecorder` automatically.
+
 Use `captureFrameAsync()` to grab a single JPEG without blocking the main
 thread. The encoding work happens in a Web Worker so interactive scenes stay
 smooth even at high resolutions.
@@ -107,8 +114,8 @@ interaction.
 
 The CLI now accepts options for resolution, stereo mode, frame count, and
 direct WebM output. Additional flags include `--fps <n>` to control frame rate,
-`--no-audio` to disable microphone recording, and `--wasm` to encode video in
-the browser using ffmpeg.wasm. Use `--stream` with `--signal-url` to broadcast a
+`--audio` to record from the microphone or `--audio-file <file>` to mix an existing
+track. Use `--wasm` to encode video in the browser with ffmpeg.wasm. Use `--stream` with `--signal-url` to broadcast a
 WebRTC preview while capturing. Argument parsing uses Node's built in
 `parseArgs` library. When available, the CLI automatically uses `ffmpeg-static`
 and `tar-stream` instead of shelling out to external commands. A simple progress
