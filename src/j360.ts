@@ -19,6 +19,7 @@ export class J360App {
   private stereo = false;
   private vrSession: XRSession | null = null;
   private streamer: WebRTCStreamer | null = null;
+  private hlsUrl: string | null = null;
 
   constructor() {
     this.init();
@@ -45,6 +46,14 @@ export class J360App {
     this.webmRecorder.start();
   };
 
+  private startHLS = (url: string) => {
+    this.hlsUrl = url;
+  };
+
+  private stopHLS = () => {
+    this.hlsUrl = null;
+  };
+
   private stopWebMRecording = async () => {
     if (!this.webmRecorder) return;
     const blob = await this.webmRecorder.stop();
@@ -67,9 +76,9 @@ export class J360App {
     return buffer;
   };
 
-  private startWasmRecording = async (fps = 60) => {
+  private startWasmRecording = async (fps = 60, incremental = false) => {
     if (!this.ffmpegEncoder) {
-      this.ffmpegEncoder = new FfmpegEncoder(fps, 'mp4');
+      this.ffmpegEncoder = new FfmpegEncoder(fps, 'mp4', incremental);
       await this.ffmpegEncoder.init();
     }
   };
@@ -231,6 +240,14 @@ export class J360App {
         this.ffmpegEncoder!.addFrame(new Uint8Array(buffer));
       }, 'image/jpeg');
     }
+
+    if (this.hlsUrl) {
+      this.equiManaged.preBlob(this.equiManaged.cubeCamera, this.camera, this.scene);
+      this.equiManaged.canvas.toBlob(async blob => {
+        if (!blob) return;
+        fetch(this.hlsUrl + '/frame', { method: 'POST', body: blob });
+      }, 'image/jpeg');
+    }
   };
 
   private onWindowResize = () => {
@@ -253,6 +270,8 @@ export class J360App {
     (window as any).stopWasmRecordingForCli = this.stopWasmRecordingForCli;
     (window as any).startStreaming = this.startStreaming;
     (window as any).stopStreaming = this.stopStreaming;
+    (window as any).startHLS = this.startHLS;
+    (window as any).stopHLS = this.stopHLS;
   }
 }
 
