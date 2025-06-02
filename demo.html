@@ -43,10 +43,13 @@
         </div>
 
 <div class="buttonHolder" style="position:relative;text-align:center;top:40px">
-<label>Resolution <select id="resolution"><option>4K</option><option>2K</option><option>1K</option></select></label>
+<label>Resolution <select id="resolution"><option>8K</option><option>4K</option><option>2K</option><option>1K</option></select></label>
 <label>Auto Save (s) <input id="autoSaveTime" type="number" value="3" min="1" step="1"/></label>
 <button class="startButton" onclick="startCapture360()">Start Capture</button>
 <button class="saveButton"  onclick="stopCapture360()">Stop Capture</button>
+<button onclick="startWebMRecording()">Start WebM</button>
+<button onclick="stopWebMRecording()">Stop WebM</button>
+<button onclick="toggleStereo()">Toggle Stereo</button>
 <span id="progress"></span>
 </div>
 

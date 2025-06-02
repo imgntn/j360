@@ -1,6 +1,6 @@
 function CubemapToEquirectangular(renderer, provideCubeCamera, resolution) {
 
-	var resolution = resolution.toUpperCase() || "4K";
+        var resolution = (resolution || "4K").toUpperCase();
 
 	this.width = 1;
 	this.height = 1;
@@ -36,36 +36,40 @@ function CubemapToEquirectangular(renderer, provideCubeCamera, resolution) {
         this.stereoCanvas = null;
 
 
-	if (resolution === "4K") {
-		this.setSize(4096, 2048);
-	}
+        if (resolution === "8K") {
+                this.setSize(8192, 4096);
+        } else if (resolution === "4K") {
+                this.setSize(4096, 2048);
+        } else if (resolution === "2K") {
+                this.setSize(2048, 1024);
+        } else {
+                this.setSize(1024, 512);
+                resolution = "1K";
+        }
 
-	if (resolution === "2K") {
-		this.setSize(2048, 1024);
-	}
 
-	if (resolution === "1K") {
-		this.setSize(1024, 512);
-	}
+        var gl = this.renderer.getContext();
+        this.cubeMapSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE);
+        this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
+        if (resolution === "8K" && (this.cubeMapSize < 4096 || this.maxTextureSize < 8192)) {
+                console.warn('8K capture not supported by this GPU, falling back to 4K');
+                resolution = "4K";
+                this.setSize(4096, 2048);
+        }
 
-	var gl = this.renderer.getContext();
-	this.cubeMapSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE)
+        if (provideCubeCamera) {
 
-	if (provideCubeCamera) {
-
-		if (resolution === "4K") {
-			this.getCubeCamera(2048);
-		}
-
-		if (resolution === "2K") {
-			this.getCubeCamera(1024);
-		}
-
-		if (resolution === "1K") {
-			this.getCubeCamera(512);
-		}
-	}
+                if (resolution === "8K") {
+                        this.getCubeCamera(4096);
+                } else if (resolution === "4K") {
+                        this.getCubeCamera(2048);
+                } else if (resolution === "2K") {
+                        this.getCubeCamera(1024);
+                } else {
+                        this.getCubeCamera(512);
+                }
+        }
 
 }
 
@@ -157,6 +161,35 @@ CubemapToEquirectangular.prototype.getCubeCameraR = function(size) {
 
 };
 
+CubemapToEquirectangular.prototype.setResolution = function(resolution, updateCamera) {
+
+        resolution = (resolution || '4K').toUpperCase();
+        if (resolution === '8K' && (this.cubeMapSize < 4096 || this.maxTextureSize < 8192)) {
+                console.warn('8K capture not supported by this GPU, falling back to 4K');
+                resolution = '4K';
+        }
+
+        var cubeSize;
+        if (resolution === '8K') {
+                this.setSize(8192, 4096);
+                cubeSize = 4096;
+        } else if (resolution === '4K') {
+                this.setSize(4096, 2048);
+                cubeSize = 2048;
+        } else if (resolution === '2K') {
+                this.setSize(2048, 1024);
+                cubeSize = 1024;
+        } else {
+                this.setSize(1024, 512);
+                cubeSize = 512;
+        }
+
+        if (updateCamera) {
+                this.getCubeCamera(cubeSize);
+                this.getCubeCameraR(cubeSize);
+        }
+};
+
 CubemapToEquirectangular.prototype.attachCubeCamera = function(camera) {
 
 	this.getCubeCamera();
@@ -221,6 +254,15 @@ CubemapToEquirectangular.prototype.convertStereo = function(leftCamera, rightCam
         sctx.putImageData(rightData, this.width, 0);
         return this.stereoCanvas;
 
+};
+
+CubemapToEquirectangular.prototype.getStereoCanvas = function() {
+        if (!this.stereoCanvas) {
+                this.stereoCanvas = document.createElement('canvas');
+                this.stereoCanvas.width = this.width * 2;
+                this.stereoCanvas.height = this.height;
+        }
+        return this.stereoCanvas;
 };
 
 CubemapToEquirectangular.prototype.preBlob = function(cubeCamera, camera, scene) {
