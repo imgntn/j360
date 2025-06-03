@@ -13,7 +13,7 @@ const { FfmpegEncoder } = mod.exports;
 
 const dummyFrame = new Uint8Array([0xff,0xd8,0xff,0xd9]);
 
-const encoder = new FfmpegEncoder(60, 'mp4', false, false, null, true);
+const encoder = new FfmpegEncoder(60, 'mp4', false, false, null, true, []);
 (encoder).ffmpeg = {
   isLoaded: () => true,
   setProgress: () => {},
@@ -26,9 +26,9 @@ const encoder = new FfmpegEncoder(60, 'mp4', false, false, null, true);
   async run() {}
 };
 
-encoder.addFrame(dummyFrame);
-encoder.addFrame(dummyFrame);
 (async () => {
+  await encoder.addFrame(dummyFrame);
+  await encoder.addFrame(dummyFrame);
   const data = await encoder.encode();
   assert.ok(data[4] === 0x66 && data[5] === 0x74 && data[6] === 0x79 && data[7] === 0x70);
   console.log('ffmpeg encoder test ok');

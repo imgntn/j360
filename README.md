@@ -122,6 +122,8 @@ and `tar-stream` instead of shelling out to external commands. A simple progress
 indicator shows capture status and, when using `--wasm`, encoding progress as
 well. Example:
 
+Use `--screenshot` to save a single equirectangular JPEG and exit immediately.
+
 Use `--incremental` with `--wasm` to encode video in small chunks to reduce
 memory usage. For live previews an HLS server can be launched automatically with
 `--hls`, and frames will stream to `http://localhost:8000/hls/out.m3u8` during
@@ -147,6 +149,11 @@ Use the "Enter VR" button to view the scene in a compatible headset before
 exporting. When in VR a small on-screen overlay lets you exit or begin
 recording without removing the headset. This is useful for verifying stereo
 alignment and overall scene composition.
+
+### Frame Processing Plugins
+
+Register custom processors with `addFrameProcessor(fn)` to modify each JPEG frame
+before encoding. See `src/processors.ts` for an example grayscale implementation.
 
 ### Live Streaming
 

@@ -23,7 +23,8 @@ function parse(argv = process.argv.slice(2)) {
       incremental: { type: 'boolean' },
       hls: { type: 'boolean' },
       interval: { type: 'string' },
-      'stream-encode': { type: 'boolean' }
+      'stream-encode': { type: 'boolean' },
+      screenshot: { type: 'boolean' }
     },
     allowPositionals: true
   });
@@ -53,6 +54,7 @@ async function run() {
   const hls = !!values.hls;
   const interval = parseInt(values.interval || '0', 10);
   const streamEncode = !!values['stream-encode'];
+  const screenshot = !!values.screenshot;
 
   function checkCmd(cmd) {
     const res = spawnSync('which', [cmd]);
@@ -86,7 +88,15 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval }) => {
+  if (screenshot) {
+    const buffer = await page.evaluate(() => window.captureFrameAsyncForCli());
+    await browser.close();
+    if (!buffer) throw new Error('No image data received');
+    fs.writeFileSync(output, Buffer.from(buffer));
+    console.log('Saved screenshot to', output);
+    return;
+  }
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval, streamEncode }) => {
     const sel = document.getElementById('resolution');
     if (sel) sel.value = resolution;
     if (stereo) window.toggleStereo();

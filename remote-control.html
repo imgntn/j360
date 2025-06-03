@@ -5,6 +5,7 @@
 <button onclick="send('stop')">Stop Rec</button>
 <button onclick="send('stereo')">Toggle Stereo</button>
 <div id="status"></div>
+<progress id="progress" value="0" max="100" style="width:100%;display:none"></progress>
 <script>
 const ws = new WebSocket(`ws://${location.hostname}:4000`);
 function send(cmd){ ws.send(JSON.stringify({command:cmd})); }
@@ -12,9 +13,14 @@ ws.onmessage = e => {
   try {
     const msg = JSON.parse(e.data);
     const div = document.getElementById('status');
-    if (!div) return;
-    if (msg.status) div.textContent = msg.status;
-    if (msg.progress !== undefined) div.textContent = `${msg.mode||''} ${msg.progress}`;
+    const bar = document.getElementById('progress');
+    if (!div || !bar) return;
+    if (msg.status) { div.textContent = msg.status; bar.style.display = 'none'; }
+    if (msg.progress !== undefined) {
+      div.textContent = `${msg.mode||''} ${msg.progress}%`;
+      bar.style.display = 'block';
+      bar.value = msg.progress;
+    }
   } catch {}
 };
 </script>

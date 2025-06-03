@@ -28,6 +28,7 @@ export class J360App {
   private intervalId: number | null = null;
   private frameCount = 0;
   private captureMode = '';
+  private frameProcessors: ((frame: Uint8Array) => Uint8Array | Promise<Uint8Array>)[] = [];
 
   constructor() {
     this.init();
@@ -157,7 +158,8 @@ export class J360App {
         incremental,
         includeAudio,
         audioData || null,
-        streamEncode
+        streamEncode,
+        this.frameProcessors
       );
       await this.ffmpegEncoder.init();
       this.frameCount = 0;
@@ -222,6 +224,10 @@ export class J360App {
     this.stereo = !this.stereo;
     this.sendRemoteStatus(this.stereo ? 'stereo-on' : 'stereo-off');
   };
+
+  public addFrameProcessor(p: (frame: Uint8Array) => Uint8Array | Promise<Uint8Array>) {
+    this.frameProcessors.push(p);
+  }
 
   private updateVrHud = () => {
     if (this.vrHud) this.vrHud.textContent = this.recording ? 'Recording' : '';
@@ -296,6 +302,35 @@ export class J360App {
         height,
         pixels: data.buffer
       }, [data.buffer]);
+    });
+  };
+
+  private captureFrameAsyncForCli = () => {
+    return new Promise<ArrayBuffer | null>(async (resolve, reject) => {
+      if (!this.equiManaged) return resolve(null);
+      await this.equiManaged.preBlobAsync(this.equiManaged.cubeCamera, this.camera, this.scene);
+      const { width, height, ctx } = this.equiManaged;
+      const data = ctx.getImageData(0, 0, width, height).data;
+      this.jpegWorker.onmessage = (e: MessageEvent) => {
+        if (e.data.error) {
+          reject(e.data.error);
+          return;
+        }
+        if (e.data.buffer) {
+          resolve(e.data.buffer);
+        } else {
+          resolve(null);
+        }
+      };
+      this.jpegWorker.postMessage(
+        {
+          width,
+          height,
+          pixels: data.buffer,
+          returnBuffer: true
+        },
+        [data.buffer]
+      );
     });
   };
 
@@ -412,7 +447,7 @@ export class J360App {
       this.equiManaged.canvas.toBlob(async blob => {
         if (!blob) return;
         const buffer = await blob.arrayBuffer();
-        this.ffmpegEncoder!.addFrame(new Uint8Array(buffer));
+        await this.ffmpegEncoder!.addFrame(new Uint8Array(buffer));
       }, 'image/jpeg');
     }
 
@@ -448,6 +483,8 @@ export class J360App {
     (window as any).stopTimedCapture = this.stopTimedCapture;
     (window as any).downloadLittlePlanet = this.downloadLittlePlanet;
     (window as any).captureFrameAsync = this.captureFrameAsync;
+    (window as any).captureFrameAsyncForCli = this.captureFrameAsyncForCli;
+    (window as any).addFrameProcessor = (p: (frame: Uint8Array) => Uint8Array | Promise<Uint8Array>) => this.addFrameProcessor(p);
     (window as any).enterVR = this.enterVR;
     (window as any).stopWebMRecordingForCli = this.stopWebMRecordingForCli;
     (window as any).stopWebCodecsRecordingForCli = this.stopWebCodecsRecordingForCli;
