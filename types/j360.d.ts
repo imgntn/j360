@@ -16,6 +16,11 @@ export declare class J360App {
     private vrSession;
     private vrHud;
     private hlsUrl;
+    private adaptive;
+    private lastFrame;
+    private frameSamples;
+    private resIndex;
+    private readonly resolutions;
     constructor();
     private startCapture360;
     private stopCapture360;
@@ -30,6 +35,7 @@ export declare class J360App {
     private startStreaming;
     private stopStreaming;
     private toggleStereo;
+    private toggleAdaptiveResolution;
     private updateVrHud;
     private onVrSelect;
     private onVrSqueeze;

@@ -148,6 +148,14 @@ exporting. When in VR a small on-screen overlay lets you exit or begin
 recording without removing the headset. This is useful for verifying stereo
 alignment and overall scene composition.
 
+### Adaptive Resolution
+
+Call `toggleAdaptiveResolution()` at runtime to enable an auto‑scaling mode.
+The library monitors frame timing and increases or decreases the capture
+resolution to maintain smooth rendering. When enabled slower hardware will drop
+down to lower resolutions while powerful machines will scale back up
+automatically.
+
 ### Live Streaming
 
 Call `startStreaming(url)` to send the canvas over WebRTC to a signaling server.
@@ -156,6 +164,9 @@ Call `startStreaming(url)` to send the canvas over WebRTC to a signaling server.
 URL with `--signal-url` or `startStreaming()` to preview remotely. The CLI
 exposes `--stream` and `--signal-url` to automate remote preview from headless
 mode.
+
+Open `viewer.html` in a browser to watch the live stream on another device.
+Pass `?signal=<url>` if the signaling server runs on a different host.
 
 # Unarchive, Convert, and Add Metadata
 

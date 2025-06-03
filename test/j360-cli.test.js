@@ -19,4 +19,8 @@ assert.strictEqual(res4.values.incremental, true);
 assert.strictEqual(res4.values.hls, true);
 assert.strictEqual(res4.values['audio-file'], 'track.wav');
 
+const res5 = parse(['--stream','--signal-url','http://remote']);
+assert.strictEqual(res5.values.stream, true);
+assert.strictEqual(res5.values['signal-url'], 'http://remote');
+
 console.log('j360-cli argument parsing ok');

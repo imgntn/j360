@@ -24,6 +24,11 @@ export class J360App {
   private vrHud: HTMLElement | null = null;
   private streamer: WebRTCStreamer | null = null;
   private hlsUrl: string | null = null;
+  private adaptive = false;
+  private lastFrame = performance.now();
+  private frameSamples: number[] = [];
+  private resIndex = 2; // start at 4K
+  private readonly resolutions = ['1K','2K','4K','8K','12K','16K'];
 
   constructor() {
     this.init();
@@ -34,6 +39,7 @@ export class J360App {
     const resSel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (resSel && this.equiManaged) {
       this.equiManaged.setResolution(resSel.value, true);
+      this.resIndex = this.resolutions.indexOf(resSel.value.toUpperCase());
     }
     this.capturer360.start();
     this.recording = true;
@@ -160,6 +166,11 @@ export class J360App {
     this.stereo = !this.stereo;
   };
 
+  private toggleAdaptiveResolution = () => {
+    this.adaptive = !this.adaptive;
+    this.frameSamples = [];
+  };
+
   private updateVrHud = () => {
     if (this.vrHud) this.vrHud.textContent = this.recording ? 'Recording' : '';
   };
@@ -244,6 +255,7 @@ export class J360App {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.equiManaged = new CubemapToEquirectangular(this.renderer, true, '4K');
+    this.resIndex = this.resolutions.indexOf('4K');
     const container = document.getElementsByClassName('container')[0] as HTMLElement;
     this.canvas = container.appendChild(this.renderer.domElement);
     this.controls = new THREE.OrbitControls(this.camera, container);
@@ -296,6 +308,25 @@ export class J360App {
 
   private animate = (delta?: number) => {
     requestAnimationFrame(this.animate);
+
+    const now = performance.now();
+    const dt = now - this.lastFrame;
+    this.lastFrame = now;
+    if (this.adaptive) {
+      this.frameSamples.push(dt);
+      if (this.frameSamples.length > 60) {
+        const avg = this.frameSamples.reduce((a, b) => a + b, 0) / this.frameSamples.length;
+        const fps = 1000 / avg;
+        if (fps < 50 && this.resIndex > 0) {
+          this.resIndex--;
+          this.equiManaged.setResolution(this.resolutions[this.resIndex], true);
+        } else if (fps > 70 && this.resIndex < this.resolutions.length - 1) {
+          this.resIndex++;
+          this.equiManaged.setResolution(this.resolutions[this.resIndex], true);
+        }
+        this.frameSamples = [];
+      }
+    }
 
     this.meshes.forEach(mesh => {
       mesh.rotation.y += 0.003;
@@ -354,6 +385,7 @@ export class J360App {
     (window as any).stopStreaming = this.stopStreaming;
     (window as any).startHLS = this.startHLS;
     (window as any).stopHLS = this.stopHLS;
+    (window as any).toggleAdaptiveResolution = this.toggleAdaptiveResolution;
   }
 }
 

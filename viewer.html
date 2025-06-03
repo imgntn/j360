@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>j360 Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body,html{margin:0;padding:0;height:100%;background:#000;}
+    #vid{width:100%;height:100%;object-fit:contain;}
+  </style>
+</head>
+<body>
+  <video id="vid" autoplay playsinline></video>
+  <script>
+  (function(){
+    const params=new URLSearchParams(location.search);
+    const signal=params.get('signal')||'ws://localhost:3000';
+    const ws=new WebSocket(signal.replace(/^http/,'ws'));
+    const post=msg=>fetch(signal.replace(/^ws/,'http'),{method:'POST',body:JSON.stringify(msg)}).catch(()=>{});
+    let pc;
+    ws.onmessage=async e=>{
+      const data=JSON.parse(e.data);
+      if(data.offer){
+        pc=new RTCPeerConnection();
+        pc.onicecandidate=ev=>{ if(ev.candidate) post({candidate:ev.candidate}); };
+        pc.ontrack=ev=>{ document.getElementById('vid').srcObject=ev.streams[0]; };
+        await pc.setRemoteDescription(data.offer);
+        const ans=await pc.createAnswer();
+        await pc.setLocalDescription(ans);
+        post({answer:ans});
+      }else if(data.candidate && pc){
+        pc.addIceCandidate(data.candidate);
+      }
+    };
+  })();
+  </script>
+</body>
+</html>
