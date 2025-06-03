@@ -1,3 +1,4 @@
+import * as THREE from "three";
 export class CubemapToEquirectangular {
   width = 1;
   height = 1;
@@ -162,7 +163,7 @@ void main()  {
       magFilter: THREE.LinearFilter,
       wrapS: THREE.ClampToEdgeWrapping,
       wrapT: THREE.ClampToEdgeWrapping,
-      format: THREE.RGBAFormat,
+      format: THREE.RGBA,
       type: THREE.UnsignedByteType
     });
 
@@ -173,7 +174,7 @@ void main()  {
   output: any;
 
   getCubeCamera(size: number = this.width / 2) {
-    this.cubeCamera = new THREE.CubeCamera(.1, 10000, Math.min(this.cubeMapSize, size));
+    this.cubeCamera = new THREE.CubeCamera(0.1, 10000, new THREE.WebGLCubeRenderTarget(Math.min(this.cubeMapSize, size)));
     return this.cubeCamera;
   }
 
@@ -190,7 +191,7 @@ void main()  {
   }
 
   getCubeCameraR(size: number = this.width / 2) {
-    this.cubeCameraR = new THREE.CubeCamera(.1, 10000, Math.min(this.cubeMapSize, size));
+    this.cubeCameraR = new THREE.CubeCamera(0.1, 10000, new THREE.WebGLCubeRenderTarget(Math.min(this.cubeMapSize, size)));
     return this.cubeCameraR;
   }
 
@@ -369,7 +370,7 @@ void main()  {
     const autoClear = this.renderer.autoClear;
     this.renderer.autoClear = true;
     this.cubeCamera.position.copy(camera.position);
-    this.cubeCamera.updateCubeMap(this.renderer, scene);
+    this.cubeCamera.update(this.renderer, scene);
     this.renderer.autoClear = autoClear;
 
     const size = cubeCamera.renderTarget.width;
@@ -389,7 +390,7 @@ void main()  {
     const autoClear = this.renderer.autoClear;
     this.renderer.autoClear = true;
     this.cubeCamera.position.copy(camera.position);
-    this.cubeCamera.updateCubeMap(this.renderer, scene);
+    this.cubeCamera.update(this.renderer, scene);
     this.renderer.autoClear = autoClear;
 
     this.quad.material.uniforms.map.value = cubeCamera.renderTarget.texture;
@@ -407,7 +408,7 @@ void main()  {
     const autoClear = this.renderer.autoClear;
     this.renderer.autoClear = true;
     this.cubeCamera.position.copy(camera.position);
-    this.cubeCamera.updateCubeMap(this.renderer, scene);
+    this.cubeCamera.update(this.renderer, scene);
     this.renderer.autoClear = autoClear;
 
     await this.convert(this.cubeCamera);
@@ -421,10 +422,10 @@ void main()  {
     this.renderer.autoClear = true;
 
     this.cubeCamera.position.copy(camera.position).add(new THREE.Vector3(-eyeOffset, 0, 0));
-    this.cubeCamera.updateCubeMap(this.renderer, scene);
+    this.cubeCamera.update(this.renderer, scene);
 
     this.cubeCameraR.position.copy(camera.position).add(new THREE.Vector3(eyeOffset, 0, 0));
-    this.cubeCameraR.updateCubeMap(this.renderer, scene);
+    this.cubeCameraR.update(this.renderer, scene);
     this.renderer.autoClear = autoClear;
 
     return this.convertStereo(this.cubeCamera, this.cubeCameraR);

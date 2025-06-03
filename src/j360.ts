@@ -4,6 +4,9 @@ import { WebCodecsRecorder } from './WebCodecsRecorder';
 import { CubemapToEquirectangular } from './CubemapToEquirectangular';
 import { FfmpegEncoder } from './FfmpegEncoder';
 import { WebRTCStreamer } from './WebRTCStreamer';
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import CCapture from "ccapture.js";
 
 export class J360App {
   private jpegWorker = new Worker(new URL('./convertWorker.ts', import.meta.url), { type: 'module' });
@@ -390,7 +393,7 @@ export class J360App {
     this.equiManaged = new CubemapToEquirectangular(this.renderer, true, '4K');
     const container = document.getElementsByClassName('container')[0] as HTMLElement;
     this.canvas = container.appendChild(this.renderer.domElement);
-    this.controls = new THREE.OrbitControls(this.camera, container);
+    this.controls = new OrbitControls(this.camera, container);
     this.camera.position.z = 0.01;
 
     this.scene.add(new THREE.AmbientLight(0x404040));

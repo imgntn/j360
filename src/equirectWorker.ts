@@ -1,3 +1,4 @@
+import * as THREE from "three";
 
 const vertexShader = `
 attribute vec3 position;
@@ -54,7 +55,7 @@ self.onmessage = async (e: MessageEvent) => {
     magFilter: THREE.LinearFilter,
     wrapS: THREE.ClampToEdgeWrapping,
     wrapT: THREE.ClampToEdgeWrapping,
-    format: THREE.RGBAFormat,
+    format: THREE.RGBA,
     type: THREE.UnsignedByteType
   });
   const texture = new THREE.CubeTexture(faces);
