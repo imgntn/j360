@@ -429,4 +429,40 @@ void main()  {
 
     return this.convertStereo(this.cubeCamera, this.cubeCameraR);
   }
+
+  toLittlePlanet() {
+    const size = Math.min(this.width, this.height);
+    const out = document.createElement('canvas');
+    out.width = size;
+    out.height = size;
+    const ctx = out.getContext('2d');
+    if (!ctx || !this.ctx) return out;
+    const src = this.ctx.getImageData(0, 0, this.width, this.height).data;
+    const dst = ctx.createImageData(size, size);
+    const cx = size / 2;
+    const cy = size / 2;
+    const radius = size / 2;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const dx = x - cx;
+        const dy = y - cy;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        if (r > radius) continue;
+        const theta = Math.atan2(dy, dx);
+        const phi = 2 * Math.atan(r / radius);
+        let u = (theta + Math.PI) / (2 * Math.PI);
+        let v = phi / Math.PI;
+        const sx = Math.min(this.width - 1, Math.max(0, Math.floor(u * this.width)));
+        const sy = Math.min(this.height - 1, Math.max(0, Math.floor(v * this.height)));
+        const si = (sy * this.width + sx) * 4;
+        const di = (y * size + x) * 4;
+        dst.data[di] = src[si];
+        dst.data[di + 1] = src[si + 1];
+        dst.data[di + 2] = src[si + 2];
+        dst.data[di + 3] = 255;
+      }
+    }
+    ctx.putImageData(dst, 0, 0);
+    return out;
+  }
 }
