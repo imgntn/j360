@@ -24,10 +24,13 @@ export class J360App {
   private vrHud: HTMLElement | null = null;
   private streamer: WebRTCStreamer | null = null;
   private hlsUrl: string | null = null;
+  private remoteSocket: WebSocket | null = null;
+  private intervalId: number | null = null;
 
   constructor() {
     this.init();
     this.animate();
+    this.connectRemote(`ws://${location.hostname}:4000`);
   }
 
   private startCapture360 = () => {
@@ -54,6 +57,7 @@ export class J360App {
     this.webmRecorder.start();
     this.recording = true;
     this.updateVrHud();
+    this.sendRemoteStatus('recording');
   };
 
   private startWebCodecsRecording = async (fps = 60, includeAudio = true) => {
@@ -89,6 +93,7 @@ export class J360App {
     this.webmRecorder = null;
     this.recording = false;
     this.updateVrHud();
+    this.sendRemoteStatus('stopped');
   };
 
   private stopWebMRecordingForCli = async () => {
@@ -156,8 +161,32 @@ export class J360App {
     this.streamer = null;
   };
 
+  private connectRemote = (url: string) => {
+    try {
+      this.remoteSocket?.close();
+      this.remoteSocket = new WebSocket(url);
+      this.remoteSocket.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.command === 'start') this.startWebMRecording();
+          else if (msg.command === 'stop') this.stopWebMRecording();
+          else if (msg.command === 'stereo') this.toggleStereo();
+        } catch {}
+      };
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  private sendRemoteStatus = (status: string) => {
+    try {
+      this.remoteSocket?.send(JSON.stringify({ status }));
+    } catch {}
+  };
+
   private toggleStereo = () => {
     this.stereo = !this.stereo;
+    this.sendRemoteStatus(this.stereo ? 'stereo-on' : 'stereo-off');
   };
 
   private updateVrHud = () => {
@@ -234,6 +263,35 @@ export class J360App {
         pixels: data.buffer
       }, [data.buffer]);
     });
+  };
+
+  private downloadLittlePlanet = async () => {
+    if (!this.equiManaged) return;
+    await this.equiManaged.preBlobAsync(this.equiManaged.cubeCamera, this.camera, this.scene);
+    const planet = this.equiManaged.toLittlePlanet();
+    planet.toBlob(b => {
+      if (!b) return;
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'little-planet-' + Date.now() + '.jpg';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }, 'image/jpeg');
+  };
+
+  private startTimedCapture = (ms: number) => {
+    if (this.intervalId) return;
+    this.intervalId = window.setInterval(() => this.captureFrameAsync(), ms);
+  };
+
+  private stopTimedCapture = () => {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   };
 
   private init() {
@@ -344,6 +402,13 @@ export class J360App {
     (window as any).startWebCodecsRecording = this.startWebCodecsRecording;
     (window as any).stopWebCodecsRecording = this.stopWebCodecsRecording;
     (window as any).toggleStereo = this.toggleStereo;
+    (window as any).startTimedCapture = () => {
+      const input = document.getElementById('intervalMs') as HTMLInputElement | null;
+      const ms = input ? parseInt(input.value, 10) : 0;
+      if (ms > 0) this.startTimedCapture(ms);
+    };
+    (window as any).stopTimedCapture = this.stopTimedCapture;
+    (window as any).downloadLittlePlanet = this.downloadLittlePlanet;
     (window as any).captureFrameAsync = this.captureFrameAsync;
     (window as any).enterVR = this.enterVR;
     (window as any).stopWebMRecordingForCli = this.stopWebMRecordingForCli;

@@ -19,4 +19,7 @@ assert.strictEqual(res4.values.incremental, true);
 assert.strictEqual(res4.values.hls, true);
 assert.strictEqual(res4.values['audio-file'], 'track.wav');
 
+const res5 = parse(['--interval','500']);
+assert.strictEqual(res5.values.interval, '500');
+
 console.log('j360-cli argument parsing ok');

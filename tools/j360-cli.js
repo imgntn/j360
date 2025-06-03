@@ -21,7 +21,8 @@ function parse(argv = process.argv.slice(2)) {
       stream: { type: 'boolean' },
       'signal-url': { type: 'string' },
       incremental: { type: 'boolean' },
-      hls: { type: 'boolean' }
+      hls: { type: 'boolean' },
+      interval: { type: 'string' }
     },
     allowPositionals: true
   });
@@ -49,6 +50,7 @@ async function run() {
   const signalUrl = values['signal-url'] || 'http://localhost:3000';
   const incremental = !!values.incremental;
   const hls = !!values.hls;
+  const interval = parseInt(values.interval || '0', 10);
 
   function checkCmd(cmd) {
     const res = spawnSync('which', [cmd]);
@@ -82,7 +84,7 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval }) => {
     const sel = document.getElementById('resolution');
     if (sel) sel.value = resolution;
     if (stereo) window.toggleStereo();
@@ -108,7 +110,12 @@ async function run() {
     if (hls) {
       window.startHLS('http://localhost:8000');
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental });
+    if (interval > 0) {
+      const input = document.getElementById('intervalMs');
+      if (input) input.value = String(interval);
+      window.startTimedCapture();
+    }
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;

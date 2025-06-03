@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="send('start')">Start Rec</button>
+<button onclick="send('stop')">Stop Rec</button>
+<button onclick="send('stereo')">Toggle Stereo</button>
+<script>
+const ws = new WebSocket(`ws://${location.hostname}:4000`);
+function send(cmd){ ws.send(JSON.stringify({command:cmd})); }
+</script>
+</body>
+</html>

@@ -9,7 +9,8 @@
     "serve": "vite preview",
     "headless": "node tools/headless-capture.js",
     "cli": "node tools/j360-cli.js",
-    "signaling": "node tools/signaling-server.js"
+    "signaling": "node tools/signaling-server.js",
+    "remote": "node tools/remote-server.js"
   },
   "dependencies": {
     "three": "^0.161.0",
