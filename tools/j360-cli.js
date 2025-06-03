@@ -22,7 +22,8 @@ function parse(argv = process.argv.slice(2)) {
       'signal-url': { type: 'string' },
       incremental: { type: 'boolean' },
       hls: { type: 'boolean' },
-      interval: { type: 'string' }
+      interval: { type: 'string' },
+      'stream-encode': { type: 'boolean' }
     },
     allowPositionals: true
   });
@@ -51,6 +52,7 @@ async function run() {
   const incremental = !!values.incremental;
   const hls = !!values.hls;
   const interval = parseInt(values.interval || '0', 10);
+  const streamEncode = !!values['stream-encode'];
 
   function checkCmd(cmd) {
     const res = spawnSync('which', [cmd]);
@@ -98,7 +100,7 @@ async function run() {
         for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
         audio = arr;
       }
-      window.startWasmRecording(fps, incremental, includeAudio, audio);
+      window.startWasmRecording(fps, incremental, includeAudio, audio, streamEncode);
     } else {
       try {
         window.startWebCodecsRecording(fps, includeAudio);
@@ -115,7 +117,7 @@ async function run() {
       if (input) input.value = String(interval);
       window.startTimedCapture();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval });
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval, streamEncode });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
