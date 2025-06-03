@@ -1,5 +1,7 @@
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
+export type FrameProcessor = (frame: Uint8Array) => Uint8Array | Promise<Uint8Array>;
+
 export class FfmpegEncoder {
   private ffmpeg = createFFmpeg({ log: true });
   private frames: Uint8Array[] = [];
@@ -8,14 +10,22 @@ export class FfmpegEncoder {
   private audioRec: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private audioData: Uint8Array | null = null;
+  private processors: FrameProcessor[] = [];
   constructor(
     private fps = 60,
     private format: 'mp4' | 'webm' = 'mp4',
     private incremental = false,
     private includeAudio = false,
     private extAudioData: Uint8Array | null = null,
-    private streamEncode = false
-  ) {}
+    private streamEncode = false,
+    processors: FrameProcessor[] = []
+  ) {
+    this.processors = processors;
+  }
+
+  addProcessor(p: FrameProcessor) {
+    this.processors.push(p);
+  }
 
   async init() {
     if (!this.ffmpeg.isLoaded()) {
@@ -33,10 +43,13 @@ export class FfmpegEncoder {
     }
   }
 
-  addFrame(data: Uint8Array) {
+  async addFrame(data: Uint8Array) {
+    for (const p of this.processors) {
+      data = await p(data);
+    }
     this.frames.push(data);
     if (this.incremental && this.frames.length >= this.chunkSize) {
-      return this.encodeChunk();
+      await this.encodeChunk();
     }
   }
 

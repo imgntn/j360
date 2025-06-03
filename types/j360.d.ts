@@ -35,6 +35,8 @@ export declare class J360App {
     private onVrSqueeze;
     private enterVR;
     private captureFrameAsync;
+    private captureFrameAsyncForCli;
+    addFrameProcessor(p: (frame: Uint8Array) => Uint8Array | Promise<Uint8Array>): void;
     private init;
     private placeObjectsAroundYou;
     private locationNames;
