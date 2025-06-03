@@ -11,6 +11,7 @@ export class FfmpegEncoder {
   private audioChunks: Blob[] = [];
   private audioData: Uint8Array | null = null;
   private processors: FrameProcessor[] = [];
+  private codec: 'h264' | 'vp9' | 'av1' = 'h264';
   constructor(
     private fps = 60,
     private format: 'mp4' | 'webm' = 'mp4',
@@ -18,9 +19,11 @@ export class FfmpegEncoder {
     private includeAudio = false,
     private extAudioData: Uint8Array | null = null,
     private streamEncode = false,
+    codec: 'h264' | 'vp9' | 'av1' = 'h264',
     processors: FrameProcessor[] = []
   ) {
     this.processors = processors;
+    this.codec = codec;
   }
 
   addProcessor(p: FrameProcessor) {
@@ -59,7 +62,7 @@ export class FfmpegEncoder {
       ffmpeg.FS('writeFile', `${i}.jpg`, this.frames[i]);
     }
     const out = `chunk${this.chunks.length}.${format}`;
-    await ffmpeg.run('-framerate', String(fps), '-i', '%d.jpg', '-pix_fmt', 'yuv420p', out);
+    await ffmpeg.run('-framerate', String(fps), '-i', '%d.jpg', '-c:v', this.getCodecArg(), '-pix_fmt', 'yuv420p', out);
     const data = ffmpeg.FS('readFile', out);
     ffmpeg.FS('unlink', out);
     for (let i = 0; i < this.frames.length; i++) {
@@ -137,7 +140,7 @@ export class FfmpegEncoder {
         ffmpeg.FS('writeFile', 'audio.webm', this.audioData);
         args.push('-i', 'audio.webm', '-shortest');
       }
-      args.push('-pix_fmt', 'yuv420p', out);
+      args.push('-c:v', this.getCodecArg(), '-pix_fmt', 'yuv420p', out);
       await ffmpeg.run(...args);
       const data = ffmpeg.FS('readFile', out);
       ffmpeg.FS('unlink', out);
@@ -151,6 +154,17 @@ export class FfmpegEncoder {
       }
       this.frames = [];
       return data;
+    }
+  }
+
+  private getCodecArg(): string {
+    switch (this.codec) {
+      case 'av1':
+        return 'libaom-av1';
+      case 'vp9':
+        return 'libvpx-vp9';
+      default:
+        return 'libx264';
     }
   }
 }

@@ -13,7 +13,7 @@ const { FfmpegEncoder } = mod.exports;
 
 const dummyFrame = new Uint8Array([0xff,0xd8,0xff,0xd9]);
 
-const encoder = new FfmpegEncoder(60, 'mp4', false, false, null, true, []);
+const encoder = new FfmpegEncoder(60, 'mp4', false, false, null, true, 'h264', []);
 (encoder).ffmpeg = {
   isLoaded: () => true,
   setProgress: () => {},

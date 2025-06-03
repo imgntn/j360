@@ -7,7 +7,7 @@ export declare class FfmpegEncoder {
     private audioRec;
     private audioChunks;
     private audioData;
-    constructor(fps?: number, format?: 'mp4' | 'webm', incremental?: boolean, includeAudio?: boolean, extAudioData?: Uint8Array | null, streamEncode?: boolean, processors?: FrameProcessor[]);
+    constructor(fps?: number, format?: 'mp4' | 'webm', incremental?: boolean, includeAudio?: boolean, extAudioData?: Uint8Array | null, streamEncode?: boolean, codec?: 'h264' | 'vp9' | 'av1', processors?: FrameProcessor[]);
     init(): Promise<void>;
     addProcessor(p: FrameProcessor): void;
     addFrame(data: Uint8Array): Promise<void>;

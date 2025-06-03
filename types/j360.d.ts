@@ -16,6 +16,7 @@ export declare class J360App {
     private vrSession;
     private vrHud;
     private hlsUrl;
+    private rtmpUrl;
     constructor();
     private startCapture360;
     private stopCapture360;
@@ -45,6 +46,8 @@ export declare class J360App {
     private onWindowResize;
     private startHLS;
     private stopHLS;
+    private startRTMP;
+    private stopRTMP;
     bindWindow(): void;
 }
 export declare const j360App: J360App;
