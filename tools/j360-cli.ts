@@ -31,7 +31,8 @@ export function parse(argv = process.argv.slice(2)): Parsed {
       screenshot: { type: 'boolean' },
       rtmp: { type: 'string' },
       codec: { type: 'string' },
-      plugin: { type: 'string', multiple: true }
+      plugin: { type: 'string', multiple: true },
+      adaptive: { type: 'boolean' }
     },
     allowPositionals: true
   });
@@ -62,6 +63,7 @@ async function run() {
   const rtmpUrl = (values as any).rtmp as string | undefined;
   const codec = ((values as any).codec || 'h264') as string;
   const plugins = (values as any).plugin ? ([] as string[]).concat(values.plugin) : [];
+  const adaptive = !!(values as any).adaptive;
 
   function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
@@ -118,10 +120,11 @@ async function run() {
     console.log('Saved screenshot to', output);
     return;
   }
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp, incremental, interval, streamEncode, codec }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp, incremental, interval, streamEncode, codec, adaptive }) => {
     const sel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (sel) sel.value = resolution;
     if (stereo) (window as any).toggleStereo();
+    if (adaptive) (window as any).toggleAdaptive();
     if (useWebM) {
       (window as any).startWebMRecording(fps, includeAudio);
     } else if (useWasm) {
@@ -150,7 +153,7 @@ async function run() {
       if (input) input.value = String(interval);
       (window as any).startTimedCapture();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp: !!rtmpUrl, incremental, interval, streamEncode, codec });
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp: !!rtmpUrl, incremental, interval, streamEncode, codec, adaptive });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;

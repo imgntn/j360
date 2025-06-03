@@ -1,15 +1,5 @@
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const ts = require('typescript');
-
-const src = fs.readFileSync(path.join(__dirname, '../src/FfmpegEncoder.ts'), 'utf8');
-const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-const m = { exports: {} };
-const Module = module.constructor;
-const mod = new Module();
-mod._compile(js, 'FfmpegEncoder.js');
-const { FfmpegEncoder } = mod.exports;
+const { FfmpegEncoder } = require('./stubs/FfmpegEncoder');
 
 const dummyFrame = new Uint8Array([0xff,0xd8,0xff,0xd9]);
 

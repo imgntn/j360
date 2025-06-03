@@ -37,4 +37,7 @@ assert.strictEqual(res9.values.codec, 'av1');
 const res10 = parse(['--plugin','a.js','--plugin','b.js']);
 assert.deepStrictEqual(res10.values.plugin, ['a.js','b.js']);
 
+const res11 = parse(['--adaptive']);
+assert.strictEqual(res11.values.adaptive, true);
+
 console.log('j360-cli argument parsing ok');

@@ -31,6 +31,7 @@ export declare class J360App {
     private startStreaming;
     private stopStreaming;
     private toggleStereo;
+    private toggleAdaptive;
     private updateVrHud;
     private onVrSelect;
     private onVrSqueeze;
