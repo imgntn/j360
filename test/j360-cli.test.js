@@ -28,4 +28,13 @@ assert.strictEqual(res6.values['stream-encode'], true);
 const res7 = parse(['--screenshot']);
 assert.strictEqual(res7.values.screenshot, true);
 
+const res8 = parse(['--rtmp','rtmp://example']);
+assert.strictEqual(res8.values.rtmp, 'rtmp://example');
+
+const res9 = parse(['--codec','av1']);
+assert.strictEqual(res9.values.codec, 'av1');
+
+const res10 = parse(['--plugin','a.js','--plugin','b.js']);
+assert.deepStrictEqual(res10.values.plugin, ['a.js','b.js']);
+
 console.log('j360-cli argument parsing ok');

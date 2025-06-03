@@ -8,7 +8,8 @@ export class WebCodecsRecorder {
     private canvas: HTMLCanvasElement,
     private fps = 60,
     private includeAudio = true,
-    private bitrate = 5_000_000
+    private bitrate = 5_000_000,
+    private codec: 'vp9' | 'av1' = 'vp9'
   ) {}
 
   async init() {
@@ -25,8 +26,9 @@ export class WebCodecsRecorder {
       },
       error: (e) => console.error(e)
     });
+    const codecStr = this.codec === 'av1' ? 'av01.0.08M.08' : 'vp09.00.10.08';
     const support = await (VideoEncoder as any).isConfigSupported({
-      codec: 'vp09.00.10.08',
+      codec: codecStr,
       width,
       height,
       bitrate: this.bitrate,

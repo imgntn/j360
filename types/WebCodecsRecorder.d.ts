@@ -8,7 +8,7 @@ export declare class WebCodecsRecorder {
     private audioRec;
     private audioChunks;
     private frameCount;
-    constructor(canvas: HTMLCanvasElement, fps?: number, includeAudio?: boolean, bitrate?: number);
+    constructor(canvas: HTMLCanvasElement, fps?: number, includeAudio?: boolean, bitrate?: number, codec?: 'vp9' | 'av1');
     init(): Promise<void>;
     start(): void;
     addFrame(): void;

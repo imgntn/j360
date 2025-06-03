@@ -128,6 +128,8 @@ Use `--incremental` with `--wasm` to encode video in small chunks to reduce
 memory usage. For live previews an HLS server can be launched automatically with
 `--hls`, and frames will stream to `http://localhost:8000/hls/out.m3u8` during
 capture.
+Use `--rtmp <url>` to push frames to an RTMP endpoint via a helper server at `http://localhost:8001`.
+Select AV1 encoding with `--codec av1` for smaller file sizes.
 
 ```bash
 node tools/j360-cli.js --resolution 4K --frames 600 --stereo output.mp4 demo.html
@@ -154,6 +156,7 @@ alignment and overall scene composition.
 
 Register custom processors with `addFrameProcessor(fn)` to modify each JPEG frame
 before encoding. See `src/processors.ts` for an example grayscale implementation.
+Plugins can also be loaded from the CLI with `--plugin my-filter.js`.
 
 ### Live Streaming
 

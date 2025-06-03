@@ -28,7 +28,10 @@ export function parse(argv = process.argv.slice(2)): Parsed {
       hls: { type: 'boolean' },
       interval: { type: 'string' },
       'stream-encode': { type: 'boolean' },
-      screenshot: { type: 'boolean' }
+      screenshot: { type: 'boolean' },
+      rtmp: { type: 'string' },
+      codec: { type: 'string' },
+      plugin: { type: 'string', multiple: true }
     },
     allowPositionals: true
   });
@@ -56,6 +59,9 @@ async function run() {
   const interval = parseInt((values as any).interval || '0', 10);
   const streamEncode = !!(values as any)['stream-encode'];
   const screenshot = !!(values as any).screenshot;
+  const rtmpUrl = (values as any).rtmp as string | undefined;
+  const codec = ((values as any).codec || 'h264') as string;
+  const plugins = (values as any).plugin ? ([] as string[]).concat(values.plugin) : [];
 
   function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
@@ -80,8 +86,12 @@ async function run() {
   }
 
   let hlsProc: any;
+  let rtmpProc: any;
   if (hls) {
     hlsProc = require('child_process').spawn('node', [path.join('tools', 'hls-server.js'), '--fps', String(fps)], { stdio: 'inherit' });
+  }
+  if (rtmpUrl) {
+    rtmpProc = require('child_process').spawn('node', [path.join('tools', 'rtmp-server.js'), '--url', rtmpUrl, '--fps', String(fps)], { stdio: 'inherit' });
   }
 
   const puppeteer = require('puppeteer');
@@ -90,6 +100,15 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
+  for (const p of plugins) {
+    const code = fs.readFileSync(p, 'utf8');
+    await page.evaluate(async (src) => {
+      const blob = new Blob([src], { type: 'text/javascript' });
+      const u = URL.createObjectURL(blob);
+      const mod = await import(u);
+      (window as any).addFrameProcessor(mod.default || mod.process || mod);
+    }, code);
+  }
 
   if (screenshot) {
     const buffer = await page.evaluate(() => (window as any).captureFrameAsyncForCli());
@@ -99,7 +118,7 @@ async function run() {
     console.log('Saved screenshot to', output);
     return;
   }
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval, streamEncode }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp, incremental, interval, streamEncode, codec }) => {
     const sel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (sel) sel.value = resolution;
     if (stereo) (window as any).toggleStereo();
@@ -113,9 +132,9 @@ async function run() {
         for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
         audio = arr;
       }
-      (window as any).startWasmRecording(fps, incremental, includeAudio, audio, streamEncode);
+      (window as any).startWasmRecording(fps, incremental, includeAudio, audio, streamEncode, codec);
     } else {
-      (window as any).startCapture360();
+      try { (window as any).startWebCodecsRecording(fps, includeAudio, codec); } catch { (window as any).startCapture360(); }
     }
     if (stream) {
       (window as any).startStreaming(signalUrl);
@@ -123,12 +142,15 @@ async function run() {
     if (hls) {
       (window as any).startHLS('http://localhost:8000');
     }
+    if (rtmp) {
+      (window as any).startRTMP('http://localhost:8001');
+    }
     if (interval > 0) {
       const input = document.getElementById('intervalMs') as HTMLInputElement | null;
       if (input) input.value = String(interval);
       (window as any).startTimedCapture();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval, streamEncode });
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp: !!rtmpUrl, incremental, interval, streamEncode, codec });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
@@ -143,6 +165,7 @@ async function run() {
     const buffer = await page.evaluate(() => (window as any).stopWebMRecordingForCli());
     await browser.close();
     if (hls && hlsProc) hlsProc.kill('SIGINT');
+    if (rtmpProc) rtmpProc.kill('SIGINT');
     if (!buffer) throw new Error('No WebM data received');
     fs.writeFileSync(output, Buffer.from(buffer));
     console.log('Saved WebM to', output);
@@ -159,6 +182,7 @@ async function run() {
     process.stdout.write('\rEncoding 100%\n');
     await browser.close();
     if (hls && hlsProc) hlsProc.kill('SIGINT');
+    if (rtmpProc) rtmpProc.kill('SIGINT');
     if (!buffer) throw new Error('No video data received');
     fs.writeFileSync(output, Buffer.from(buffer));
     console.log('Saved video to', output);
@@ -169,9 +193,11 @@ async function run() {
     (window as any).stopCapture360();
     if ((window as any).stopStreaming) (window as any).stopStreaming();
     if ((window as any).stopHLS) (window as any).stopHLS();
+    if ((window as any).stopRTMP) (window as any).stopRTMP();
   });
   await browser.close();
   if (hls && hlsProc) hlsProc.kill('SIGINT');
+  if (rtmpProc) rtmpProc.kill('SIGINT');
 
   const archives = fs.readdirSync(process.cwd()).filter(f => /^capture-.*\.tar$/.test(f));
   if (archives.length === 0) {
@@ -191,7 +217,8 @@ async function run() {
   const frameCount = fs.readdirSync(tmpDir).filter(f => f.endsWith('.jpg')).length;
   console.log(`Found ${frameCount} frames`);
 
-  const ffmpegArgs = ['-y', '-framerate', String(fps), '-i', path.join(tmpDir, '%07d.jpg'), output];
+  const codecMap: any = { av1: 'libaom-av1', vp9: 'libvpx-vp9', h264: 'libx264' };
+  const ffmpegArgs = ['-y', '-framerate', String(fps), '-i', path.join(tmpDir, '%07d.jpg'), '-c:v', codecMap[codec] || 'libx264', output];
   console.log(`Running ffmpeg ${ffmpegArgs.join(' ')}`);
   let res = spawnSync('ffmpeg', ffmpegArgs, { stdio: 'inherit' });
   if (res.status !== 0) {

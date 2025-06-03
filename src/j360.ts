@@ -24,6 +24,7 @@ export class J360App {
   private vrHud: HTMLElement | null = null;
   private streamer: WebRTCStreamer | null = null;
   private hlsUrl: string | null = null;
+  private rtmpUrl: string | null = null;
   private remoteSocket: WebSocket | null = null;
   private intervalId: number | null = null;
   private frameCount = 0;
@@ -68,10 +69,10 @@ export class J360App {
     this.sendRemoteStatus('recording');
   };
 
-  private startWebCodecsRecording = async (fps = 60, includeAudio = true) => {
+  private startWebCodecsRecording = async (fps = 60, includeAudio = true, codec: 'vp9' | 'av1' = 'vp9') => {
     if (!this.webCodecsRecorder) {
       const src = this.stereo ? this.equiManaged.getStereoCanvas() : (this.canvas as HTMLCanvasElement);
-      this.webCodecsRecorder = new WebCodecsRecorder(src as HTMLCanvasElement, fps, includeAudio);
+      this.webCodecsRecorder = new WebCodecsRecorder(src as HTMLCanvasElement, fps, includeAudio, 5_000_000, codec);
       await this.webCodecsRecorder.init();
       this.webCodecsRecorder.start();
     }
@@ -87,6 +88,14 @@ export class J360App {
 
   private stopHLS = () => {
     this.hlsUrl = null;
+  };
+
+  private startRTMP = (url: string) => {
+    this.rtmpUrl = url;
+  };
+
+  private stopRTMP = () => {
+    this.rtmpUrl = null;
   };
 
   private stopWebMRecording = async () => {
@@ -149,7 +158,8 @@ export class J360App {
     incremental = false,
     includeAudio = false,
     audioData?: Uint8Array,
-    streamEncode = false
+    streamEncode = false,
+    codec: 'h264' | 'vp9' | 'av1' = 'h264'
   ) => {
     if (!this.ffmpegEncoder) {
       this.ffmpegEncoder = new FfmpegEncoder(
@@ -159,6 +169,7 @@ export class J360App {
         includeAudio,
         audioData || null,
         streamEncode,
+        codec,
         this.frameProcessors
       );
       await this.ffmpegEncoder.init();
@@ -458,6 +469,14 @@ export class J360App {
         fetch(this.hlsUrl + '/frame', { method: 'POST', body: blob });
       }, 'image/jpeg');
     }
+
+    if (this.rtmpUrl) {
+      this.equiManaged.preBlob(this.equiManaged.cubeCamera, this.camera, this.scene);
+      this.equiManaged.canvas.toBlob(async blob => {
+        if (!blob) return;
+        fetch(this.rtmpUrl + '/frame', { method: 'POST', body: blob });
+      }, 'image/jpeg');
+    }
   };
 
   private onWindowResize = () => {
@@ -494,6 +513,8 @@ export class J360App {
     (window as any).stopStreaming = this.stopStreaming;
     (window as any).startHLS = this.startHLS;
     (window as any).stopHLS = this.stopHLS;
+    (window as any).startRTMP = this.startRTMP;
+    (window as any).stopRTMP = this.stopRTMP;
   }
 }
 
