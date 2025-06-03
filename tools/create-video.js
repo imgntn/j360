@@ -53,22 +53,12 @@ if (res.status !== 0) {
 console.log('ffmpeg complete');
 
 try {
-  const which = spawnSync('which', ['spatialmedia']);
-  if (which.status === 0) {
-    const injected = path.join(path.dirname(output), path.parse(output).name + '_360' + path.parse(output).ext);
-    const args = ['-i', output, injected];
-    console.log(`Injecting metadata: spatialmedia ${args.join(' ')}`);
-    res = spawnSync('spatialmedia', args, { stdio: 'inherit' });
-    if (res.status === 0) {
-      console.log(`Metadata injected video at ${injected}`);
-    } else {
-      console.error('Metadata injection failed');
-    }
-  } else {
-    console.log('spatialmedia not found, skipping metadata injection');
-  }
+  const { injectMp4 } = require('./metadata');
+  console.log('Injecting 360 metadata');
+  injectMp4(output);
+  console.log('Metadata injected');
 } catch (e) {
-  console.log('spatialmedia not found, skipping metadata injection');
+  console.error('Metadata injection failed:', e.message);
 }
 
 console.log('Done');

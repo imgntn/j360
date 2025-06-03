@@ -157,6 +157,7 @@ alignment and overall scene composition.
 Register custom processors with `addFrameProcessor(fn)` to modify each JPEG frame
 before encoding. See `src/processors.ts` for an example grayscale implementation.
 Plugins can also be loaded from the CLI with `--plugin my-filter.js`.
+GPU accelerated filters can be built with `createWebGLProcessor()` from `src/gpu-processors.ts` which runs custom shaders in an `OffscreenCanvas` for high performance transformations.
 
 ### Live Streaming
 
@@ -170,6 +171,10 @@ exposes `--stream` and `--signal-url` to automate remote preview from headless
 
 Open `viewer.html` in any browser to watch the WebRTC preview. The page connects to the signaling server on port 3000 and displays the incoming stream.
 
+### HLS Viewer
+
+When capturing with `--hls`, frames stream to an HLS server on port 8000. Open `hls-viewer.html` to play the generated playlist using `hls.js` while monitoring progress.
+
 ### Adaptive Resolution
 
 Enable adaptive mode with `toggleAdaptive()` or pass `--adaptive` to the CLI. When active the library lowers the resolution if frames take longer than 40ms to render and raises it again once performance recovers.
@@ -182,7 +187,7 @@ You can do this manually by extracting the files and running FFMPEG yourself:
 
 The “%07d” tells FFMPEG that there are 7 decimals before the “.jpg” extension in each filename.
 
-To automate the process a script is provided in `tools/create-video.js`.  It requires `node`, `tar` and `ffmpeg` to be installed.  If the [Spatial Media Metadata Injector](https://github.com/google/spatial-media/releases) is available in your `PATH` the script will also embed the metadata automatically.
+To automate the process a script is provided in `tools/create-video.js`.  It requires `node`, `tar` and `ffmpeg` to be installed.  The script now embeds the necessary 360° metadata directly in Node so the external Spatial Media tool is no longer required.
 
 Example usage:
 

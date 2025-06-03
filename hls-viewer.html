@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<body>
+<video id="hls" controls autoplay style="width:100%;max-width:100%"></video>
+<progress id="progress" value="0" max="100" style="width:100%;display:none"></progress>
+<div id="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script>
+const video = document.getElementById('hls');
+function play(url){
+  if(Hls.isSupported()){
+    const hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  }else if(video.canPlayType('application/vnd.apple.mpegurl')){
+    video.src = url;
+  }
+}
+play('http://localhost:8000/hls/out.m3u8');
+const ws = new WebSocket(`ws://${location.hostname}:4000`);
+ws.onmessage = e => {
+  try{
+    const msg = JSON.parse(e.data);
+    const div = document.getElementById('status');
+    const bar = document.getElementById('progress');
+    if(msg.status){ div.textContent = msg.status; bar.style.display='none'; }
+    if(msg.progress!==undefined){ div.textContent = `${msg.mode||''} ${msg.progress}%`; bar.style.display='block'; bar.value=msg.progress; }
+  }catch{}
+};
+</script>
+</body>
+</html>
