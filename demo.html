@@ -156,7 +156,7 @@ function capture360(event) {
 
                 // CUBE CAMERA
 
-                cubeCamera = new THREE.CubeCamera( 1, 10000, 128 );
+                cubeCamera = new THREE.CubeCamera( 1, 10000, new THREE.WebGLCubeRenderTarget( 128 ) );
 
                 // TEXTURES
                 var textureLoader = new THREE.TextureLoader();
@@ -165,17 +165,17 @@ function capture360(event) {
                 textureSquares.repeat.set( 50, 50 );
                 textureSquares.wrapS = textureSquares.wrapT = THREE.RepeatWrapping;
                 textureSquares.magFilter = THREE.NearestFilter;
-                textureSquares.format = THREE.RGBFormat;
+                textureSquares.format = THREE.RGB;
 
                 var textureNoiseColor = textureLoader.load( "textures/disturb.jpg" );
                 textureNoiseColor.repeat.set( 1, 1 );
                 textureNoiseColor.wrapS = textureNoiseColor.wrapT = THREE.RepeatWrapping;
-                textureNoiseColor.format = THREE.RGBFormat;
+                textureNoiseColor.format = THREE.RGB;
 
                 var textureLava = textureLoader.load( "textures/lavatile.jpg" );
                 textureLava.repeat.set( 6, 2 );
                 textureLava.wrapS = textureLava.wrapT = THREE.RepeatWrapping;
-                textureLava.format = THREE.RGBFormat;
+                textureLava.format = THREE.RGB;
 
                 //
 
@@ -402,7 +402,7 @@ function capture360(event) {
                 // render cube map
 
                 mesh.visible = false;
-                cubeCamera.updateCubeMap( renderer, scene );
+                cubeCamera.update( renderer, scene );
                 mesh.visible = true;
 
                 // render scene
