@@ -30,6 +30,8 @@ export class J360App {
   private frameCount = 0;
   private captureMode = '';
   private frameProcessors: ((frame: Uint8Array) => Uint8Array | Promise<Uint8Array>)[] = [];
+  private adaptive = false;
+  private lastTime = performance.now();
 
   constructor() {
     this.init();
@@ -236,6 +238,10 @@ export class J360App {
     this.sendRemoteStatus(this.stereo ? 'stereo-on' : 'stereo-off');
   };
 
+  private toggleAdaptive = () => {
+    this.adaptive = !this.adaptive;
+  };
+
   public addFrameProcessor(p: (frame: Uint8Array) => Uint8Array | Promise<Uint8Array>) {
     this.frameProcessors.push(p);
   }
@@ -435,6 +441,17 @@ export class J360App {
   private animate = (delta?: number) => {
     requestAnimationFrame(this.animate);
 
+    const now = performance.now();
+    const dt = now - this.lastTime;
+    this.lastTime = now;
+    if (this.adaptive && this.equiManaged) {
+      if (dt > 40 && this.equiManaged.width > 2048) {
+        this.equiManaged.setResolution('2K', true);
+      } else if (dt < 30 && this.equiManaged.width < 4096) {
+        this.equiManaged.setResolution('4K', true);
+      }
+    }
+
     this.meshes.forEach(mesh => {
       mesh.rotation.y += 0.003;
     });
@@ -494,6 +511,7 @@ export class J360App {
     (window as any).startWebCodecsRecording = this.startWebCodecsRecording;
     (window as any).stopWebCodecsRecording = this.stopWebCodecsRecording;
     (window as any).toggleStereo = this.toggleStereo;
+    (window as any).toggleAdaptive = this.toggleAdaptive;
     (window as any).startTimedCapture = () => {
       const input = document.getElementById('intervalMs') as HTMLInputElement | null;
       const ms = input ? parseInt(input.value, 10) : 0;

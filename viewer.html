@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+<video id="view" autoplay playsinline style="width:100%;max-width:100%"></video>
+<script>
+const video = document.getElementById('view');
+const ws = new WebSocket(`ws://${location.hostname}:3000`);
+const pc = new RTCPeerConnection();
+pc.ontrack = e => {
+  if (video.srcObject !== e.streams[0]) video.srcObject = e.streams[0];
+};
+pc.onicecandidate = e => { if (e.candidate) ws.send(JSON.stringify({ candidate: e.candidate })); };
+ws.onmessage = async e => {
+  try {
+    const msg = JSON.parse(e.data);
+    if (msg.offer) {
+      await pc.setRemoteDescription(new RTCSessionDescription(msg.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ws.send(JSON.stringify({ answer }));
+    } else if (msg.candidate) {
+      await pc.addIceCandidate(msg.candidate);
+    }
+  } catch {}
+};
+</script>
+</body>
+</html>

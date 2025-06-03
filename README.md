@@ -165,7 +165,14 @@ Call `startStreaming(url)` to send the canvas over WebRTC to a signaling server.
 `tools/signaling-server.js` and can be started with `npm run signaling`. Use its
 URL with `--signal-url` or `startStreaming()` to preview remotely. The CLI
 exposes `--stream` and `--signal-url` to automate remote preview from headless
-mode.
+
+### Remote Viewer
+
+Open `viewer.html` in any browser to watch the WebRTC preview. The page connects to the signaling server on port 3000 and displays the incoming stream.
+
+### Adaptive Resolution
+
+Enable adaptive mode with `toggleAdaptive()` or pass `--adaptive` to the CLI. When active the library lowers the resolution if frames take longer than 40ms to render and raises it again once performance recovers.
 
 # Unarchive, Convert, and Add Metadata
 
