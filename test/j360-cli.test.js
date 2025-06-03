@@ -22,4 +22,7 @@ assert.strictEqual(res4.values['audio-file'], 'track.wav');
 const res5 = parse(['--interval','500']);
 assert.strictEqual(res5.values.interval, '500');
 
+const res6 = parse(['--stream-encode']);
+assert.strictEqual(res6.values['stream-encode'], true);
+
 console.log('j360-cli argument parsing ok');

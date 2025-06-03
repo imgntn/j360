@@ -13,7 +13,8 @@ export class FfmpegEncoder {
     private format: 'mp4' | 'webm' = 'mp4',
     private incremental = false,
     private includeAudio = false,
-    private extAudioData: Uint8Array | null = null
+    private extAudioData: Uint8Array | null = null,
+    private streamEncode = false
   ) {}
 
   async init() {
@@ -103,11 +104,22 @@ export class FfmpegEncoder {
       this.chunks = [];
       return data;
     } else {
-      for (let i = 0; i < this.frames.length; i++) {
-        ffmpeg.FS('writeFile', `${i}.jpg`, this.frames[i]);
-      }
       const out = `out.${format}`;
-      const args = ['-framerate', String(fps), '-i', '%d.jpg'];
+      let args: string[];
+      if (this.streamEncode) {
+        let len = 0;
+        for (const f of this.frames) len += f.length;
+        const pipe = new Uint8Array(len);
+        let off = 0;
+        for (const f of this.frames) { pipe.set(f, off); off += f.length; }
+        ffmpeg.FS('writeFile', 'pipe.dat', pipe);
+        args = ['-f', 'image2pipe', '-vcodec', 'mjpeg', '-r', String(fps), '-i', 'pipe.dat'];
+      } else {
+        for (let i = 0; i < this.frames.length; i++) {
+          ffmpeg.FS('writeFile', `${i}.jpg`, this.frames[i]);
+        }
+        args = ['-framerate', String(fps), '-i', '%d.jpg'];
+      }
       if (this.audioData) {
         ffmpeg.FS('writeFile', 'audio.webm', this.audioData);
         args.push('-i', 'audio.webm', '-shortest');
@@ -117,8 +129,12 @@ export class FfmpegEncoder {
       const data = ffmpeg.FS('readFile', out);
       ffmpeg.FS('unlink', out);
       if (this.audioData) ffmpeg.FS('unlink', 'audio.webm');
-      for (let i = 0; i < this.frames.length; i++) {
-        ffmpeg.FS('unlink', `${i}.jpg`);
+      if (this.streamEncode) {
+        ffmpeg.FS('unlink', 'pipe.dat');
+      } else {
+        for (let i = 0; i < this.frames.length; i++) {
+          ffmpeg.FS('unlink', `${i}.jpg`);
+        }
       }
       this.frames = [];
       return data;

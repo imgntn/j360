@@ -20,10 +20,14 @@ export function parse(argv = process.argv.slice(2)): Parsed {
       webm: { type: 'boolean', short: 'w' },
       wasm: { type: 'boolean' },
       fps: { type: 'string' },
-      'no-audio': { type: 'boolean' },
+      audio: { type: 'boolean' },
+      'audio-file': { type: 'string' },
       stream: { type: 'boolean' },
       'signal-url': { type: 'string' },
-      interval: { type: 'string' }
+      incremental: { type: 'boolean' },
+      hls: { type: 'boolean' },
+      interval: { type: 'string' },
+      'stream-encode': { type: 'boolean' }
     },
     allowPositionals: true
   });
@@ -40,10 +44,16 @@ async function run() {
   const useWebM = !!(values as any).webm;
   const useWasm = !!(values as any).wasm;
   const fps = parseInt((values as any).fps || '60', 10);
-  const includeAudio = !(values as any)['no-audio'];
+  const captureAudio = !!(values as any).audio;
+  const audioFilePath = (values as any)['audio-file'];
+  const audioFileData = audioFilePath ? fs.readFileSync(audioFilePath).toString('base64') : null;
+  const includeAudio = captureAudio || !!audioFileData;
   const stream = !!(values as any).stream;
   const signalUrl = (values as any)['signal-url'] || 'http://localhost:3000';
+  const incremental = !!(values as any).incremental;
+  const hls = !!(values as any).hls;
   const interval = parseInt((values as any).interval || '0', 10);
+  const streamEncode = !!(values as any)['stream-encode'];
 
   function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
@@ -54,12 +64,22 @@ async function run() {
 
   try {
     if (!useWasm) {
-      checkCmd('tar');
-      checkCmd('ffmpeg');
+      try {
+        require('tar-stream');
+        require('ffmpeg-static');
+      } catch {
+        checkCmd('tar');
+        checkCmd('ffmpeg');
+      }
     }
   } catch (e) {
     console.error(String(e));
     process.exit(1);
+  }
+
+  let hlsProc: any;
+  if (hls) {
+    hlsProc = require('child_process').spawn('node', [path.join('tools', 'hls-server.js'), '--fps', String(fps)], { stdio: 'inherit' });
   }
 
   const puppeteer = require('puppeteer');
@@ -68,26 +88,36 @@ async function run() {
   const page = await browser.newPage();
   await page.goto(url);
   await page.waitForFunction('window.startCapture360');
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl, interval }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval, streamEncode }) => {
     const sel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (sel) sel.value = resolution;
     if (stereo) (window as any).toggleStereo();
     if (useWebM) {
       (window as any).startWebMRecording(fps, includeAudio);
     } else if (useWasm) {
-      (window as any).startWasmRecording(fps);
+      let audio: Uint8Array | undefined = undefined;
+      if (audioFileData) {
+        const bin = atob(audioFileData);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        audio = arr;
+      }
+      (window as any).startWasmRecording(fps, incremental, includeAudio, audio, streamEncode);
     } else {
       (window as any).startCapture360();
     }
     if (stream) {
       (window as any).startStreaming(signalUrl);
     }
+    if (hls) {
+      (window as any).startHLS('http://localhost:8000');
+    }
     if (interval > 0) {
       const input = document.getElementById('intervalMs') as HTMLInputElement | null;
       if (input) input.value = String(interval);
       (window as any).startTimedCapture();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, stream, signalUrl, interval });
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, incremental, interval, streamEncode });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
@@ -101,6 +131,7 @@ async function run() {
   if (useWebM) {
     const buffer = await page.evaluate(() => (window as any).stopWebMRecordingForCli());
     await browser.close();
+    if (hls && hlsProc) hlsProc.kill('SIGINT');
     if (!buffer) throw new Error('No WebM data received');
     fs.writeFileSync(output, Buffer.from(buffer));
     console.log('Saved WebM to', output);
@@ -116,6 +147,7 @@ async function run() {
     );
     process.stdout.write('\rEncoding 100%\n');
     await browser.close();
+    if (hls && hlsProc) hlsProc.kill('SIGINT');
     if (!buffer) throw new Error('No video data received');
     fs.writeFileSync(output, Buffer.from(buffer));
     console.log('Saved video to', output);
@@ -125,8 +157,10 @@ async function run() {
   await page.evaluate(() => {
     (window as any).stopCapture360();
     if ((window as any).stopStreaming) (window as any).stopStreaming();
+    if ((window as any).stopHLS) (window as any).stopHLS();
   });
   await browser.close();
+  if (hls && hlsProc) hlsProc.kill('SIGINT');
 
   const archives = fs.readdirSync(process.cwd()).filter(f => /^capture-.*\.tar$/.test(f));
   if (archives.length === 0) {

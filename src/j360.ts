@@ -26,6 +26,8 @@ export class J360App {
   private hlsUrl: string | null = null;
   private remoteSocket: WebSocket | null = null;
   private intervalId: number | null = null;
+  private frameCount = 0;
+  private captureMode = '';
 
   constructor() {
     this.init();
@@ -39,6 +41,8 @@ export class J360App {
       this.equiManaged.setResolution(resSel.value, true);
     }
     this.capturer360.start();
+    this.frameCount = 0;
+    this.captureMode = 'ccapture';
     this.recording = true;
     this.updateVrHud();
   };
@@ -47,6 +51,7 @@ export class J360App {
     this.capturer360.stop();
     this.recording = false;
     this.updateVrHud();
+    this.sendRemoteStatus('stopped');
   };
 
   private startWebMRecording = (fps = 60, includeAudio = true) => {
@@ -55,6 +60,8 @@ export class J360App {
       this.webmRecorder = new WebMRecorder(src as HTMLCanvasElement, fps, includeAudio);
     }
     this.webmRecorder.start();
+    this.frameCount = 0;
+    this.captureMode = 'webm';
     this.recording = true;
     this.updateVrHud();
     this.sendRemoteStatus('recording');
@@ -67,6 +74,8 @@ export class J360App {
       await this.webCodecsRecorder.init();
       this.webCodecsRecorder.start();
     }
+    this.frameCount = 0;
+    this.captureMode = 'webcodecs';
     this.recording = true;
     this.updateVrHud();
   };
@@ -113,6 +122,7 @@ export class J360App {
     this.webCodecsRecorder = null;
     this.recording = false;
     this.updateVrHud();
+    this.sendRemoteStatus('stopped');
     return buffer;
   };
 
@@ -130,21 +140,41 @@ export class J360App {
     this.webCodecsRecorder = null;
     this.recording = false;
     this.updateVrHud();
+    this.sendRemoteStatus('stopped');
   };
 
-  private startWasmRecording = async (fps = 60, incremental = false, includeAudio = false, audioData?: Uint8Array) => {
+  private startWasmRecording = async (
+    fps = 60,
+    incremental = false,
+    includeAudio = false,
+    audioData?: Uint8Array,
+    streamEncode = false
+  ) => {
     if (!this.ffmpegEncoder) {
-      this.ffmpegEncoder = new FfmpegEncoder(fps, 'mp4', incremental, includeAudio, audioData || null);
+      this.ffmpegEncoder = new FfmpegEncoder(
+        fps,
+        'mp4',
+        incremental,
+        includeAudio,
+        audioData || null,
+        streamEncode
+      );
       await this.ffmpegEncoder.init();
+      this.frameCount = 0;
+      this.captureMode = 'wasm';
       this.recording = true;
     }
   };
 
-  private stopWasmRecordingForCli = async (progress?: (p: number) => void) => {
+  private stopWasmRecordingForCli = async (onProgress?: (p: number) => void) => {
     if (!this.ffmpegEncoder) return null;
-    const data = await this.ffmpegEncoder.encode(progress);
+    const data = await this.ffmpegEncoder.encode(p => {
+      this.sendRemoteStatus({ progress: p, mode: 'encoding' });
+      if (onProgress) onProgress(p);
+    });
     this.ffmpegEncoder = null;
     this.recording = false;
+    this.sendRemoteStatus('stopped');
     return data.buffer;
   };
 
@@ -178,9 +208,13 @@ export class J360App {
     }
   };
 
-  private sendRemoteStatus = (status: string) => {
+  private sendRemoteStatus = (msg: string | { status?: string; progress?: number; mode?: string }) => {
     try {
-      this.remoteSocket?.send(JSON.stringify({ status }));
+      if (typeof msg === 'string') {
+        this.remoteSocket?.send(JSON.stringify({ status: msg }));
+      } else {
+        this.remoteSocket?.send(JSON.stringify(msg));
+      }
     } catch {}
   };
 
@@ -367,6 +401,10 @@ export class J360App {
       this.capturer360.capture(out);
     } else {
       this.capturer360.capture(this.canvas as HTMLCanvasElement);
+    }
+    if (this.recording) {
+      this.frameCount++;
+      this.sendRemoteStatus({ progress: this.frameCount, mode: this.captureMode });
     }
 
     if (this.ffmpegEncoder) {
