@@ -67,6 +67,11 @@ Key options:
 - `--hls` – stream frames to an HLS server.
 - `--rtmp <url>` – push frames to an RTMP endpoint.
 - `--screenshot` – save a single JPEG and exit.
+- `--adaptive` – enable automatic resolution switching.
+- `--min-res <1K|2K|4K|8K|12K|16K>` – lower bound for adaptive mode.
+- `--max-res <1K|2K|4K|8K|12K|16K>` – upper bound for adaptive mode.
+
+See `plugins/invert-plugin.js` for a GPU shader example usable with `--plugin`.
 
 See `tools/j360-cli.ts` for all supported flags.
 
@@ -104,7 +109,7 @@ Install `ffmpeg` on your system or ensure `ffmpeg-static` is available. The CLI 
 
 ### Can I add filters to the frames?
 
-Yes. Register a processor with `addFrameProcessor(fn)` or pass `--plugin my-filter.js` to the CLI. See `src/processors.ts` for a grayscale example.
+Yes. Register a processor with `addFrameProcessor(fn)` or pass `--plugin my-filter.js` to the CLI. See `src/processors.ts` for a grayscale example or `plugins/invert-plugin.js` for a WebGL shader filter.
 
 ## Running Tests
 
