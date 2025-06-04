@@ -226,3 +226,5 @@ Get in touch with me on LinkedIn for custom 360 content or more versatile deploy
 https://www.linkedin.com/in/jamespollack
 
 For a detailed user guide see [docs/USAGE.md](docs/USAGE.md).
+Additional Mermaid diagrams illustrating the workflow are available in
+[docs/DIAGRAMS.md](docs/DIAGRAMS.md).
