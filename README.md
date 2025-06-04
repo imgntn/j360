@@ -224,3 +224,5 @@ npm run serve
 Get in touch with me on LinkedIn for custom 360 content or more versatile deployments of this software.  
 
 https://www.linkedin.com/in/jamespollack
+
+For a detailed user guide see [docs/USAGE.md](docs/USAGE.md).
