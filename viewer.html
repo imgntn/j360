@@ -2,6 +2,7 @@
 <html>
 <body>
 <video id="view" autoplay playsinline style="width:100%;max-width:100%"></video>
+<div id="status" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.5);color:white;padding:4px"></div>
 <script>
 const video = document.getElementById('view');
 const ws = new WebSocket(`ws://${location.hostname}:3000`);
@@ -20,6 +21,18 @@ ws.onmessage = async e => {
       ws.send(JSON.stringify({ answer }));
     } else if (msg.candidate) {
       await pc.addIceCandidate(msg.candidate);
+    }
+  } catch {}
+};
+const status = document.getElementById('status');
+const ws2 = new WebSocket(`ws://${location.hostname}:4000`);
+ws2.onmessage = e => {
+  try {
+    const msg = JSON.parse(e.data);
+    if (msg.progress !== undefined) {
+      status.textContent = `${msg.mode||''} ${msg.progress}% ${msg.frame||0}f ${msg.elapsed||0}s`;
+    } else if (msg.status) {
+      status.textContent = msg.status;
     }
   } catch {}
 };

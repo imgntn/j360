@@ -32,7 +32,9 @@ export function parse(argv = process.argv.slice(2)): Parsed {
       rtmp: { type: 'string' },
       codec: { type: 'string' },
       plugin: { type: 'string', multiple: true },
-      adaptive: { type: 'boolean' }
+      adaptive: { type: 'boolean' },
+      'min-res': { type: 'string' },
+      'max-res': { type: 'string' }
     },
     allowPositionals: true
   });
@@ -64,6 +66,8 @@ async function run() {
   const codec = ((values as any).codec || 'h264') as string;
   const plugins = (values as any).plugin ? ([] as string[]).concat(values.plugin) : [];
   const adaptive = !!(values as any).adaptive;
+  const minRes = (values as any)['min-res'] as string | undefined;
+  const maxRes = (values as any)['max-res'] as string | undefined;
 
   function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
@@ -108,7 +112,12 @@ async function run() {
       const blob = new Blob([src], { type: 'text/javascript' });
       const u = URL.createObjectURL(blob);
       const mod = await import(u);
-      (window as any).addFrameProcessor(mod.default || mod.process || mod);
+      let proc: any = mod.default || mod.process || mod;
+      if (typeof proc === 'string' || typeof mod.fragment === 'string') {
+        const frag = typeof proc === 'string' ? proc : mod.fragment;
+        proc = (window as any).createWebGLProcessor(frag);
+      }
+      (window as any).addFrameProcessor(proc);
     }, code);
   }
 
@@ -120,11 +129,12 @@ async function run() {
     console.log('Saved screenshot to', output);
     return;
   }
-  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp, incremental, interval, streamEncode, codec, adaptive }) => {
+  await page.evaluate(({ resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp, incremental, interval, streamEncode, codec, adaptive, minRes, maxRes }) => {
     const sel = document.getElementById('resolution') as HTMLSelectElement | null;
     if (sel) sel.value = resolution;
     if (stereo) (window as any).toggleStereo();
     if (adaptive) (window as any).toggleAdaptive();
+    if (minRes || maxRes) (window as any).setAdaptiveRange(minRes || '1K', maxRes || '16K');
     if (useWebM) {
       (window as any).startWebMRecording(fps, includeAudio);
     } else if (useWasm) {
@@ -153,7 +163,7 @@ async function run() {
       if (input) input.value = String(interval);
       (window as any).startTimedCapture();
     }
-  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp: !!rtmpUrl, incremental, interval, streamEncode, codec, adaptive });
+  }, { resolution, stereo, useWebM, useWasm, fps, includeAudio, audioFileData, stream, signalUrl, hls, rtmp: !!rtmpUrl, incremental, interval, streamEncode, codec, adaptive, minRes, maxRes });
 
   const durationMs = (frames / fps) * 1000;
   const step = 1000;
