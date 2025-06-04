@@ -157,7 +157,13 @@ alignment and overall scene composition.
 Register custom processors with `addFrameProcessor(fn)` to modify each JPEG frame
 before encoding. See `src/processors.ts` for an example grayscale implementation.
 Plugins can also be loaded from the CLI with `--plugin my-filter.js`.
-GPU accelerated filters can be built with `createWebGLProcessor()` from `src/gpu-processors.ts` which runs custom shaders in an `OffscreenCanvas` for high performance transformations.
+GPU accelerated filters can be built with `createWebGLProcessor()` from `src/gpu-processors.ts` which runs custom shaders in an `OffscreenCanvas` for high performance transformations. Several common filters are provided out of the box:
+
+* `invertFilter`
+* `grayscaleFilter`
+* `tintFilter([r,g,b])`
+
+Use the CLI flag `--filter <name>` to enable them at capture time. The tint color is configurable with `--tint-color <hex>`.
 
 ### Live Streaming
 
@@ -178,6 +184,18 @@ When capturing with `--hls`, frames stream to an HLS server on port 8000. Open `
 ### Adaptive Resolution
 
 Enable adaptive mode with `toggleAdaptive()` or pass `--adaptive` to the CLI. When active the library lowers the resolution if frames take longer than 40ms to render and raises it again once performance recovers.
+
+### Equirectangular to Cubemap
+
+The `EquirectangularToCubemap` class converts panoramic textures back into cube maps using WebGPU. Load an image and generate six faces to create a `THREE.CubeTexture`:
+
+```ts
+const img = await createImageBitmap(myEquirectImage);
+const conv = new EquirectangularToCubemap();
+const faces = await conv.convert(img, 1024);
+const cube = new THREE.CubeTexture(faces);
+scene.environment = cube;
+```
 
 # Unarchive, Convert, and Add Metadata
 

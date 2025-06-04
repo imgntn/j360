@@ -32,7 +32,9 @@ export function parse(argv = process.argv.slice(2)): Parsed {
       rtmp: { type: 'string' },
       codec: { type: 'string' },
       plugin: { type: 'string', multiple: true },
-      adaptive: { type: 'boolean' }
+      adaptive: { type: 'boolean' },
+      filter: { type: 'string', multiple: true },
+      'tint-color': { type: 'string' }
     },
     allowPositionals: true
   });
@@ -64,6 +66,8 @@ async function run() {
   const codec = ((values as any).codec || 'h264') as string;
   const plugins = (values as any).plugin ? ([] as string[]).concat(values.plugin) : [];
   const adaptive = !!(values as any).adaptive;
+  const filters = (values as any).filter ? ([] as string[]).concat(values.filter) : [];
+  const tintColor = (values as any)['tint-color'] as string | undefined;
 
   function checkCmd(cmd: string) {
     const res = spawnSync('which', [cmd]);
@@ -110,6 +114,20 @@ async function run() {
       const mod = await import(u);
       (window as any).addFrameProcessor(mod.default || mod.process || mod);
     }, code);
+  }
+  if (filters.length) {
+    await page.evaluate(async (filters, color) => {
+      const mod = await import('./src/gpu-processors.ts');
+      const col = color ? color.replace('#','') : 'ff0000';
+      const r = parseInt(col.slice(0,2),16)/255;
+      const g = parseInt(col.slice(2,4),16)/255;
+      const b = parseInt(col.slice(4,6),16)/255;
+      for (const f of filters) {
+        if (f === 'invert') (window as any).addFrameProcessor(mod.invertFilter);
+        else if (f === 'grayscale') (window as any).addFrameProcessor(mod.grayscaleFilter);
+        else if (f === 'tint') (window as any).addFrameProcessor(mod.tintFilter([r,g,b]));
+      }
+    }, filters, tintColor || null);
   }
 
   if (screenshot) {

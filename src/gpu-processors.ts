@@ -42,3 +42,14 @@ export function createWebGLProcessor(fragmentSource: string) {
 export const invertFilter = createWebGLProcessor(
   'precision mediump float;varying vec2 v;uniform sampler2D t;void main(){gl_FragColor=vec4(1.0-texture2D(t,v).rgb,1.0);}'
 );
+
+export const grayscaleFilter = createWebGLProcessor(
+  'precision mediump float;varying vec2 v;uniform sampler2D t;void main(){vec4 c=texture2D(t,v);float g=(c.r+c.g+c.b)/3.0;gl_FragColor=vec4(g,g,g,1.0);}'
+);
+
+export function tintFilter(color: [number, number, number]) {
+  const [r, g, b] = color.map(c => c.toFixed(3));
+  return createWebGLProcessor(
+    `precision mediump float;varying vec2 v;uniform sampler2D t;void main(){vec4 c=texture2D(t,v);gl_FragColor=vec4(c.rgb*vec3(${r},${g},${b}),1.0);}`
+  );
+}
