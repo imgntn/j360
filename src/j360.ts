@@ -117,6 +117,23 @@ export class J360App {
     this.rtmpUrl = null;
   };
 
+  private startRecording = () => {
+    const sel = document.getElementById('capture-mode') as HTMLSelectElement | null;
+    const mode = sel?.value || 'ccapture';
+    if (mode === 'webm') this.startWebMRecording();
+    else if (mode === 'webcodecs') this.startWebCodecsRecording();
+    else if (mode === 'wasm') this.startWasmRecording();
+    else this.startCapture360();
+  };
+
+  private stopRecording = async () => {
+    if (this.captureMode === 'webm') await this.stopWebMRecording();
+    else if (this.captureMode === 'webcodecs') await this.stopWebCodecsRecording();
+    else if (this.captureMode === 'wasm') await this.stopWasmRecording();
+    else this.stopCapture360();
+    this.captureMode = '';
+  };
+
   private stopWebMRecording = async () => {
     if (!this.webmRecorder) return;
     const blob = await this.webmRecorder.stop();
@@ -213,6 +230,18 @@ export class J360App {
     return data.buffer;
   };
 
+  private stopWasmRecording = async () => {
+    const buf = await this.stopWasmRecordingForCli();
+    if (!buf) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'video/mp4' }));
+    a.download = 'capture.mp4';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   private startStreaming = (signalUrl: string) => {
     if (!this.canvas) return;
     this.streamer = new WebRTCStreamer(this.canvas, msg => {
@@ -284,12 +313,9 @@ export class J360App {
 
   private onVrSelect = () => {
     if (this.recording) {
-      if (this.webCodecsRecorder) this.stopWebCodecsRecording();
-      else if (this.webmRecorder) this.stopWebMRecording();
-      else if (this.ffmpegEncoder) this.stopWasmRecordingForCli();
-      else this.stopCapture360();
+      this.stopRecording();
     } else {
-      this.startWebMRecording();
+      this.startRecording();
     }
     this.updateVrHud();
   };
@@ -510,6 +536,11 @@ export class J360App {
       const elapsed = Math.floor((performance.now() - this.startTime) / 1000);
       this.sendRemoteStatus({ progress: this.frameCount, mode: this.captureMode, frame: this.frameCount, elapsed });
       this.updateVrHud();
+      const prog = document.getElementById('progress');
+      if (prog) prog.textContent = `${this.frameCount}f ${elapsed}s`;
+    } else {
+      const prog = document.getElementById('progress');
+      if (prog) prog.textContent = '';
     }
 
     if (this.ffmpegEncoder) {
@@ -544,14 +575,35 @@ export class J360App {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
+  private checkCapabilities = () => {
+    const sel = document.getElementById('capture-mode') as HTMLSelectElement | null;
+    if (!sel) return;
+    if (!(window as any).VideoEncoder) {
+      const opt = sel.querySelector('option[value="webcodecs"]') as HTMLOptionElement;
+      if (opt) opt.disabled = true;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const opt = sel.querySelector('option[value="webm"]') as HTMLOptionElement;
+      if (opt) opt.disabled = true;
+    }
+    if (!(navigator as any).gpu) {
+      const opt = sel.querySelector('option[value="wasm"]') as HTMLOptionElement;
+      if (opt) opt.disabled = true;
+    }
+  };
+
   public bindWindow() {
     window.addEventListener('resize', this.onWindowResize, false);
+    window.addEventListener('load', this.checkCapabilities);
     (window as any).startCapture360 = this.startCapture360;
     (window as any).stopCapture360 = this.stopCapture360;
     (window as any).startWebMRecording = this.startWebMRecording;
     (window as any).stopWebMRecording = this.stopWebMRecording;
     (window as any).startWebCodecsRecording = this.startWebCodecsRecording;
     (window as any).stopWebCodecsRecording = this.stopWebCodecsRecording;
+    (window as any).startRecording = this.startRecording;
+    (window as any).stopRecording = this.stopRecording;
+    (window as any).stopWasmRecording = this.stopWasmRecording;
     (window as any).toggleStereo = this.toggleStereo;
     (window as any).toggleAdaptive = this.toggleAdaptive;
     (window as any).startTimedCapture = () => {

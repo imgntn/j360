@@ -7,6 +7,9 @@ interface Window {
   startWebCodecsRecording: (fps?: number, includeAudio?: boolean, codec?: 'vp9' | 'av1') => void;
   stopWebCodecsRecording: () => Promise<void>;
   stopWebCodecsRecordingForCli: () => Promise<ArrayBuffer | null>;
+  startRecording: () => void;
+  stopRecording: () => Promise<void>;
+  stopWasmRecording: () => Promise<void>;
   toggleStereo: () => void;
   captureFrameAsync: () => Promise<void>;
   enterVR: () => void;
