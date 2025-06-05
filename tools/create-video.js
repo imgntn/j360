@@ -18,25 +18,53 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'j360-'));
 
 console.log(`Extracting archives to ${tmpDir}`);
 
-let tarExtract;
-try { tarExtract = require('tar-stream').extract(); } catch {}
-if (tarExtract) {
-  const extract = require('tar-stream').extract();
-  const pipeline = require('stream').pipeline;
-  const fsSync = require('fs');
-  Promise.all(archives.map(a => new Promise((resolve, reject) => {
-    pipeline(fsSync.createReadStream(a), extract, err => err ? reject(err) : resolve());
-  }))).then(() => {}).catch(() => process.exit(1));
-} else {
-  archives.forEach((archive, idx) => {
-    console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
-    const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
-    if (res.status !== 0) {
-      console.error(`Failed to extract ${archive}`);
-      process.exit(res.status);
+(async () => {
+  let hasTarStream = false;
+  try { require('tar-stream'); hasTarStream = true; } catch {}
+
+  if (hasTarStream) {
+    const { extract } = require('tar-stream');
+    const fsP = fs.promises;
+    for (const [idx, archive] of archives.entries()) {
+      console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
+      await new Promise((resolve, reject) => {
+        const ext = extract();
+        ext.on('entry', async (header, stream, next) => {
+          try {
+            const dest = path.join(tmpDir, header.name);
+            if (header.type === 'directory') {
+              await fsP.mkdir(dest, { recursive: true });
+              stream.resume();
+              next();
+            } else {
+              await fsP.mkdir(path.dirname(dest), { recursive: true });
+              const out = fs.createWriteStream(dest);
+              stream.pipe(out);
+              out.on('finish', next);
+              out.on('error', reject);
+            }
+          } catch (err) {
+            reject(err);
+          }
+        });
+        ext.on('finish', resolve);
+        ext.on('error', reject);
+        fs.createReadStream(archive).on('error', reject).pipe(ext);
+      }).catch(err => {
+        console.error(`Failed to extract ${archive}:`, err.message);
+        process.exit(1);
+      });
     }
-  });
-}
+  } else {
+    archives.forEach((archive, idx) => {
+      console.log(`  [${idx + 1}/${archives.length}] ${archive}`);
+      const res = spawnSync('tar', ['-xf', archive, '-C', tmpDir], { stdio: 'inherit' });
+      if (res.status !== 0) {
+        console.error(`Failed to extract ${archive}`);
+        process.exit(res.status);
+      }
+    });
+  }
 
 const frameCount = fs.readdirSync(tmpDir).filter(f => f.endsWith('.jpg')).length;
 console.log(`Found ${frameCount} frames`);
@@ -63,3 +91,7 @@ try {
 
 console.log('Done');
 fs.rmSync(tmpDir, { recursive: true, force: true });
+})().catch(e => {
+  console.error('Extraction failed:', e.message || e);
+  process.exit(1);
+});
