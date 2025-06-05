@@ -25,6 +25,8 @@ The app will capture a batch every N seconds, according to the autoSaveTime para
 
 [simple tests](https://imgntn.github.io/j360/index.html)
 
+[dashboard](dashboard.html)
+
 
 # Example files
 
@@ -169,7 +171,7 @@ exposes `--stream` and `--signal-url` to automate remote preview from headless
 
 ### Remote Viewer
 
-Open `viewer.html` in any browser to watch the WebRTC preview. The page connects to the signaling server on port 3000 and displays the incoming stream.
+Open `dashboard.html` in any browser to watch the WebRTC preview and control recording. The page connects to the signaling server on port 3000 and to the remote control server on port 4000.
 
 ### HLS Viewer
 
