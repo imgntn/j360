@@ -29,7 +29,7 @@ Start the development server:
 npm run dev
 ```
 
-Visit `http://localhost:5173` to open the demo scene. Choose a capture mode from the "Capture" selector and click **Start Recording**. A progress label shows captured frames and elapsed time. Unsupported options are disabled automatically based on browser capabilities.
+Visit `http://localhost:5173` to open the demo scene. Choose a capture mode from the "Capture" selector and click **Start Recording**. A progress label and bar show captured frames and elapsed time. Unsupported options are disabled automatically based on browser capabilities.
 
 ## Building and Serving
 

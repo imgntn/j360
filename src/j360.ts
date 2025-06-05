@@ -536,11 +536,21 @@ export class J360App {
       const elapsed = Math.floor((performance.now() - this.startTime) / 1000);
       this.sendRemoteStatus({ progress: this.frameCount, mode: this.captureMode, frame: this.frameCount, elapsed });
       this.updateVrHud();
-      const prog = document.getElementById('progress');
-      if (prog) prog.textContent = `${this.frameCount}f ${elapsed}s`;
+      const text = document.getElementById('progress-text');
+      const bar = document.getElementById('progress-bar') as HTMLProgressElement | null;
+      if (text) text.textContent = `${this.frameCount}f ${elapsed}s`;
+      if (bar) {
+        bar.style.display = 'block';
+        bar.removeAttribute('value');
+      }
     } else {
-      const prog = document.getElementById('progress');
-      if (prog) prog.textContent = '';
+      const text = document.getElementById('progress-text');
+      const bar = document.getElementById('progress-bar') as HTMLProgressElement | null;
+      if (text) text.textContent = '';
+      if (bar) {
+        bar.style.display = 'none';
+        bar.value = 0;
+      }
     }
 
     if (this.ffmpegEncoder) {

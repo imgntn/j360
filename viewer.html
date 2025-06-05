@@ -3,6 +3,7 @@
 <body>
 <video id="view" autoplay playsinline style="width:100%;max-width:100%"></video>
 <div id="status" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.5);color:white;padding:4px"></div>
+<progress id="progress-bar" value="0" max="100" style="position:absolute;top:40px;left:10px;width:calc(100% - 20px);display:none"></progress>
 <script>
 const video = document.getElementById('view');
 const ws = new WebSocket(`ws://${location.hostname}:3000`);
@@ -25,14 +26,17 @@ ws.onmessage = async e => {
   } catch {}
 };
 const status = document.getElementById('status');
+const bar = document.getElementById('progress-bar');
 const ws2 = new WebSocket(`ws://${location.hostname}:4000`);
 ws2.onmessage = e => {
   try {
     const msg = JSON.parse(e.data);
     if (msg.progress !== undefined) {
       status.textContent = `${msg.mode||''} ${msg.progress}% ${msg.frame||0}f ${msg.elapsed||0}s`;
+      if (bar) { bar.style.display = 'block'; bar.value = msg.progress; }
     } else if (msg.status) {
       status.textContent = msg.status;
+      if (bar) { bar.style.display = 'none'; bar.value = 0; }
     }
   } catch {}
 };
