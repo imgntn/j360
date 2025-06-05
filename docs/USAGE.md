@@ -14,6 +14,8 @@ J360 is a toolkit for capturing high resolution 360° images and video from Thre
 - WebRTC streaming preview and remote control server.
 - HLS and RTMP helpers for live video workflows.
 - Frame processor plugins for custom effects.
+- Fast "Little Planet" projection using `toLittlePlanetGpu()` when WebGL or
+  WebGPU is available.
 
 ## Getting Started
 
@@ -102,6 +104,12 @@ Not all browsers expose the WebCodecs API. Use the default CCapture.js mode or t
 ### How do I capture still images?
 
 Use `captureFrameAsync()` from the browser console or `--screenshot` with the CLI to save a single equirectangular JPEG.
+
+### How do I generate a Little Planet view quickly?
+
+Call `toLittlePlanetGpu()` on the `CubemapToEquirectangular` instance. When GPU
+support is present the shader implementation maps pixels in parallel and returns
+a square canvas of the same size as the CPU version.
 
 ### Encoding fails with "ffmpeg not found"
 

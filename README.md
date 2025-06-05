@@ -102,7 +102,9 @@ smooth even at high resolutions.
 When WebGPU is available the library can output equirectangular frames at
 **16K** and **12K** resolutions. The converter automatically selects WebGPU when
 these ultra high resolutions are requested and now uses a compute shader for
-fast cubemap projection.
+fast cubemap projection. A GPU shader is also used for the "Little Planet"
+projection via the new `toLittlePlanetGpu()` method which renders the polar map
+in parallel for large speedups when WebGL or WebGPU is available.
 
 ## Headless Rendering
 

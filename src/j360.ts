@@ -412,7 +412,12 @@ export class J360App {
   private downloadLittlePlanet = async () => {
     if (!this.equiManaged) return;
     await this.equiManaged.preBlobAsync(this.equiManaged.cubeCamera, this.camera, this.scene);
-    const planet = this.equiManaged.toLittlePlanet();
+    let planet: HTMLCanvasElement;
+    if (this.equiManaged.toLittlePlanetGpu && this.equiManaged.renderer?.getContext?.()) {
+      planet = this.equiManaged.toLittlePlanetGpu();
+    } else {
+      planet = this.equiManaged.toLittlePlanet();
+    }
     planet.toBlob(b => {
       if (!b) return;
       const url = URL.createObjectURL(b);
