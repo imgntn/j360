@@ -1,0 +1,98 @@
+/* Basic theme for J360 example pages */
+:root {
+  --bg-color: #f4f4f4;
+  --panel-bg: #ffffff;
+  --text-color: #333;
+  --accent-color: #1e88e5;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+button,
+select,
+input {
+  font-size: 1rem;
+  padding: 0.4em 0.8em;
+}
+
+.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.control-panel {
+  position: relative;
+  padding: 8px;
+  background: var(--panel-bg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  text-align: center;
+}
+
+.status {
+  padding: 4px;
+  text-align: center;
+}
+
+.overlay {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 5px;
+}
+
+.progress-bar {
+  width: 100%;
+  display: none;
+}
+
+.viewer-progress {
+  position: absolute;
+  top: 40px;
+  left: 10px;
+  width: calc(100% - 20px);
+}
+
+video.preview {
+  width: 100%;
+  max-height: 40vh;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.mt-40 {
+  margin-top: 40px;
+}
+
+.info-banner {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  padding: 5px;
+}
+
+a {
+  color: var(--accent-color);
+}
+
+@media (max-width: 600px) {
+  .control-panel {
+    flex-direction: column;
+  }
+}

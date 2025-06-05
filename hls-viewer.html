@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
+<head>
+<link rel="stylesheet" href="styles/theme.css" />
+</head>
 <body>
-<video id="hls" controls autoplay style="width:100%;max-width:100%"></video>
-<progress id="progress" value="0" max="100" style="width:100%;display:none"></progress>
-<div id="status"></div>
+<video id="hls" controls autoplay class="preview"></video>
+<progress id="progress" value="0" max="100" class="progress-bar"></progress>
+<div id="status" class="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <script>
 const video = document.getElementById('hls');

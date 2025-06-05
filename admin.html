@@ -3,17 +3,12 @@
 <head>
   <title>J360 Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="styles/theme.css" />
   <script type="module" src="./src/j360.ts"></script>
-  <style>
-    body { margin:0; overflow:hidden; }
-    .container { position:fixed; top:0; left:0; width:100%; height:100%; }
-    #controls { position:relative; background:white; padding:8px; text-align:center; }
-    #status { padding:4px; }
-  </style>
 </head>
 <body>
-  <div class="container"></div>
-  <div id="controls">
+  <div class="container fullscreen"></div>
+  <div id="controls" class="control-panel">
     <label>Resolution
       <select id="resolution">
         <option>16K</option><option>12K</option><option>8K</option>
@@ -56,7 +51,7 @@
     <button onclick="startCapture()">Start</button>
     <button onclick="stopCapture()">Stop</button>
   </div>
-  <div id="status">Idle</div>
+  <div id="status" class="status">Idle</div>
   <script>
     let currentMode = '';
     function startCapture() {

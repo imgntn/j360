@@ -32,6 +32,9 @@ The app will capture a batch every N seconds, according to the autoSaveTime para
 
 Clone the repository and serve its files using a webserver of your choice.
 
+All example pages now include `styles/theme.css` which provides a shared color
+palette and responsive layout. Customize this file to adjust the look and feel.
+
 
 [index.html](index.html) contains simple test shapes.  moving the camera during capture has no effect.
 

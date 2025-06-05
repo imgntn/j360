@@ -33,6 +33,8 @@ npm run dev
 
 Visit `http://localhost:5173` to open the demo scene. Choose a capture mode from the "Capture" selector and click **Start Recording**. A progress label and bar show captured frames and elapsed time. Unsupported options are disabled automatically based on browser capabilities.
 
+All HTML examples include a common stylesheet at `styles/theme.css` for a consistent layout. Modify this file to change colors or spacing across pages.
+
 ## Building and Serving
 
 To create a production build:
