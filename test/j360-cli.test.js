@@ -40,4 +40,8 @@ assert.deepStrictEqual(res10.values.plugin, ['a.js','b.js']);
 const res11 = parse(['--adaptive']);
 assert.strictEqual(res11.values.adaptive, true);
 
+const res12 = parse(['--min-res','2K','--max-res','8K']);
+assert.strictEqual(res12.values['min-res'], '2K');
+assert.strictEqual(res12.values['max-res'], '8K');
+
 console.log('j360-cli argument parsing ok');

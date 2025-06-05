@@ -1,4 +1,4 @@
-This project shows how to export 4K resolution 360 Videos and Photos from inside of Three.js scenes.
+This project shows how to export high resolution 360° videos and photos from inside of Three.js scenes. When WebGPU is available the library can generate up to 16K output.
 
 The process is described in this blog post: https://medium.com/p/788226f2c75f
 
@@ -24,6 +24,8 @@ The app will capture a batch every N seconds, according to the autoSaveTime para
 [demo scene](https://imgntn.github.io/j360/demo.html)
 
 [simple tests](https://imgntn.github.io/j360/index.html)
+
+[dashboard](dashboard.html)
 
 
 # Example files
@@ -175,7 +177,7 @@ exposes `--stream` and `--signal-url` to automate remote preview from headless
 
 ### Remote Viewer
 
-Open `viewer.html` in any browser to watch the WebRTC preview. The page connects to the signaling server on port 3000 and displays the incoming stream.
+Open `dashboard.html` in any browser to watch the WebRTC preview and control recording. The page connects to the signaling server on port 3000 and to the remote control server on port 4000.
 
 ### HLS Viewer
 
@@ -226,6 +228,11 @@ Install dependencies with `npm install` and start a development server:
 npm run dev
 ```
 
+Open `http://localhost:5173` in your browser. Select a capture mode from the
+"Capture" drop‑down then click **Start Recording**. The page shows a running
+frame count and elapsed time. Options that your browser doesn't support are
+automatically disabled.
+
 Build the bundled assets:
 
 ```bash
@@ -242,3 +249,7 @@ npm run serve
 Get in touch with me on LinkedIn for custom 360 content or more versatile deployments of this software.  
 
 https://www.linkedin.com/in/jamespollack
+
+For a detailed user guide see [docs/USAGE.md](docs/USAGE.md).
+Additional Mermaid diagrams illustrating the workflow are available in
+[docs/DIAGRAMS.md](docs/DIAGRAMS.md).

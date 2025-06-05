@@ -17,7 +17,7 @@ ws.onmessage = e => {
     if (!div || !bar) return;
     if (msg.status) { div.textContent = msg.status; bar.style.display = 'none'; }
     if (msg.progress !== undefined) {
-      div.textContent = `${msg.mode||''} ${msg.progress}%`;
+      div.textContent = `${msg.mode||''} ${msg.progress}% ${msg.frame||0}f ${msg.elapsed||0}s`;
       bar.style.display = 'block';
       bar.value = msg.progress;
     }
