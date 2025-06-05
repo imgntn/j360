@@ -60,12 +60,13 @@ Methods shown above are defined in [src/j360.ts](../src/j360.ts).
 ```mermaid
 timeline
     title Typical Workflow
-    2024 : Clone repository
-    2024 : npm install
-    2024 : npm run dev
-    2024 : Record demo
-    2024 : Run j360-cli.js
-    2024 : Convert with create-video.js
+    2025 : Clone repository
+    2025 : npm install
+    2025 : npm run dev
+    2025 : Record demo
+    2025 : Run j360-cli.js
+    2025 : Convert with create-video.js
+    2025 : Release v2.0
 ```
 
 ## Gitgraph
@@ -76,5 +77,6 @@ gitGraph
     commit id: "recorder" tag: "recording"
     commit id: "stream" tag: "streaming"
     commit id: "cli" tag: "cli"
+    commit id: "webgpu" tag: "v2"
 ```
 
