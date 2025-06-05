@@ -208,6 +208,11 @@ Install dependencies with `npm install` and start a development server:
 npm run dev
 ```
 
+Open `http://localhost:5173` in your browser. Select a capture mode from the
+"Capture" drop‑down then click **Start Recording**. The page shows a running
+frame count and elapsed time. Options that your browser doesn't support are
+automatically disabled.
+
 Build the bundled assets:
 
 ```bash
