@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>J360 Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <script type="module" src="./src/j360.ts"></script>
+  <style>
+    body { margin:0; font-family:sans-serif; }
+    .container { position:fixed; top:0; left:0; width:100%; height:100%; }
+    #panel { position:relative; padding:8px; background:#fff; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+    #panel label { white-space:nowrap; }
+    #status { text-align:center; padding:4px; }
+    video { width:100%; max-height:40vh; display:block; margin-bottom:8px; }
+  </style>
+</head>
+<body style="overflow:hidden;">
+  <video id="preview" autoplay playsinline></video>
+  <div class="container"></div>
+  <div id="panel">
+    <label>Resolution
+      <select id="resolution">
+        <option>16K</option><option>12K</option><option>8K</option>
+        <option selected>4K</option><option>2K</option><option>1K</option>
+      </select>
+    </label>
+    <label>Capture
+      <select id="capture-mode">
+        <option value="ccapture">Images (CCapture)</option>
+        <option value="webm">WebM</option>
+        <option value="webcodecs">WebCodecs</option>
+        <option value="wasm">MP4 (WASM)</option>
+      </select>
+    </label>
+    <label>Auto Save (s)
+      <input id="autoSaveTime" type="number" value="3" min="1" step="1" />
+    </label>
+    <button onclick="startRecording()">Start Recording</button>
+    <button onclick="stopRecording()">Stop Recording</button>
+    <button onclick="toggleStereo()">Toggle Stereo</button>
+    <button onclick="downloadLittlePlanet()">Little Planet</button>
+    <label>Interval (ms)
+      <input id="intervalMs" type="number" value="0" min="100" step="100" />
+    </label>
+    <button onclick="startTimedCapture()">Start Timelapse</button>
+    <button onclick="stopTimedCapture()">Stop Timelapse</button>
+    <button onclick="captureFrameAsync()">Capture Frame</button>
+    <button onclick="enterVR()">Enter VR</button>
+    <span id="progress"></span>
+  </div>
+  <div id="status"></div>
+  <div id="vr-overlay" style="display:none;position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.5);padding:5px;color:white;">
+    <button onclick="enterVR()">Exit VR</button>
+    <button onclick="startRecording()">Record</button>
+    <div id="vr-hud"></div>
+  </div>
+  <script>
+    const video = document.getElementById('preview');
+    const status = document.getElementById('status');
+
+    // WebRTC viewer
+    const pc = new RTCPeerConnection();
+    const ws = new WebSocket(`ws://${location.hostname}:3000`);
+    pc.ontrack = e => {
+      if (video.srcObject !== e.streams[0]) video.srcObject = e.streams[0];
+    };
+    pc.onicecandidate = e => { if (e.candidate) ws.send(JSON.stringify({ candidate: e.candidate })); };
+    ws.onmessage = async e => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.offer) {
+          await pc.setRemoteDescription(new RTCSessionDescription(msg.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          ws.send(JSON.stringify({ answer }));
+        } else if (msg.candidate) {
+          await pc.addIceCandidate(msg.candidate);
+        }
+      } catch {}
+    };
+
+    // Remote control status
+    const ctrl = new WebSocket(`ws://${location.hostname}:4000`);
+    ctrl.onmessage = e => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.progress !== undefined) {
+          status.textContent = `${msg.mode || ''} ${msg.progress}% ${msg.frame || 0}f ${msg.elapsed || 0}s`;
+        } else if (msg.status) {
+          status.textContent = msg.status;
+        }
+      } catch {}
+    };
+  </script>
+</body>
+</html>

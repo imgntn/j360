@@ -49,6 +49,9 @@ export declare class J360App {
     private stopHLS;
     private startRTMP;
     private stopRTMP;
+    private startRecording;
+    private stopRecording;
+    private stopWasmRecording;
     bindWindow(): void;
 }
 export declare const j360App: J360App;
