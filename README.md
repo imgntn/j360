@@ -1,4 +1,4 @@
-This project shows how to export 4K resolution 360 Videos and Photos from inside of Three.js scenes.
+This project shows how to export high resolution 360° videos and photos from inside of Three.js scenes. When WebGPU is available the library can generate up to 16K output.
 
 The process is described in this blog post: https://medium.com/p/788226f2c75f
 
