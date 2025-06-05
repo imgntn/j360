@@ -82,6 +82,22 @@ void main()  {
 
 }`;
 
+  littlePlanetFragment = `
+precision mediump float;
+uniform sampler2D map;
+varying vec2 vUv;
+#define M_PI 3.1415926535897932384626433832795
+void main(){
+  vec2 c = vUv * 2.0 - 1.0;
+  float r = length(c);
+  if(r > 1.0){ discard; }
+  float theta = atan(c.y, c.x);
+  float phi = 2.0 * atan(r);
+  float u = (theta + M_PI) / (2.0 * M_PI);
+  float v = phi / M_PI;
+  gl_FragColor = texture2D(map, vec2(u, v));
+}`;
+
   constructor(renderer: any, provideCubeCamera = true, resolution = '4K') {
     this.renderer = renderer;
     resolution = this.selectBestResolution(resolution);
@@ -465,5 +481,49 @@ void main()  {
     }
     ctx.putImageData(dst, 0, 0);
     return out;
+  }
+
+  toLittlePlanetGpu() {
+    const size = Math.min(this.width, this.height);
+    const gl = this.renderer?.getContext?.();
+    if (!gl) return this.toLittlePlanet();
+    const target = new THREE.WebGLRenderTarget(size, size, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      wrapS: THREE.ClampToEdgeWrapping,
+      wrapT: THREE.ClampToEdgeWrapping,
+      format: THREE.RGBAFormat,
+      type: THREE.UnsignedByteType
+    });
+    const tex = new THREE.CanvasTexture(this.canvas);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    const mat = new THREE.RawShaderMaterial({
+      uniforms: { map: { value: tex } },
+      vertexShader: this.vertexShader,
+      fragmentShader: this.littlePlanetFragment,
+      side: THREE.DoubleSide
+    });
+    const scene = new THREE.Scene();
+    const quad = new THREE.Mesh(new THREE.PlaneBufferGeometry(size, size), mat);
+    scene.add(quad);
+    const cam = new THREE.OrthographicCamera(size / -2, size / 2, size / 2, size / -2, -10000, 10000);
+    this.renderer.setRenderTarget(target);
+    this.renderer.render(scene, cam);
+    this.renderer.setRenderTarget(null);
+    const pixels = new Uint8Array(4 * size * size);
+    this.renderer.readRenderTargetPixels(target, 0, 0, size, size, pixels);
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const img = new ImageData(new Uint8ClampedArray(pixels), size, size);
+      ctx.putImageData(img, 0, 0);
+    }
+    target.dispose();
+    tex.dispose();
+    mat.dispose();
+    return canvas;
   }
 }

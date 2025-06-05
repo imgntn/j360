@@ -30,4 +30,6 @@ export declare class CubemapToEquirectangular {
     preBlob(cubeCamera: any, camera: any, scene: any): void;
     update(camera: any, scene: any): Promise<void>;
     updateStereo(camera: any, scene: any, eyeOffset?: number): HTMLCanvasElement;
+    toLittlePlanet(): HTMLCanvasElement;
+    toLittlePlanetGpu(): HTMLCanvasElement;
 }
