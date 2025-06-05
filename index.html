@@ -3,6 +3,7 @@
 <head>
 <title>j360</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<link rel="stylesheet" href="styles/theme.css" />
 <!-- bundled script -->
 <script type="module" src="./src/j360.ts"></script>
 
@@ -16,11 +17,11 @@
   ga('send', 'pageview');
 </script>
 </head>
-<body style="overflow:hidden;margin:0;padding:0">
+<body>
 
-<div class="container" style="position:fixed;width:100%;height:100%;top:0;left:0"></div>
+<div class="container fullscreen"></div>
 
-<div class="buttonHolder" style="position:relative;text-align:center;">
+<div class="buttonHolder control-panel">
   <label>Resolution <select id="resolution"><option>16K</option><option>12K</option><option>8K</option><option>4K</option><option>2K</option><option>1K</option></select></label>
   <label>Capture <select id="capture-mode">
       <option value="ccapture">Images (CCapture)</option>
@@ -39,9 +40,9 @@
   <button onclick="captureFrameAsync()">Capture Frame</button>
   <button onclick="enterVR()">Enter VR</button>
   <span id="progress-text"></span>
-  <progress id="progress-bar" style="width:100%;display:none"></progress>
+  <progress id="progress-bar" class="progress-bar"></progress>
 </div>
-<div id="vr-overlay" style="display:none;position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.5);padding:5px;color:white;">
+<div id="vr-overlay" class="overlay">
   <button onclick="enterVR()">Exit VR</button>
   <button onclick="startRecording()">Record</button>
   <div id="vr-hud"></div>

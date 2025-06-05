@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
-<body>
+<head>
+<link rel="stylesheet" href="styles/theme.css" />
+</head>
+<body class="control-panel">
 <button onclick="send('start')">Start Rec</button>
 <button onclick="send('stop')">Stop Rec</button>
 <button onclick="send('stereo')">Toggle Stereo</button>
 <div id="status"></div>
-<progress id="progress" value="0" max="100" style="width:100%;display:none"></progress>
+<progress id="progress" value="0" max="100" class="progress-bar"></progress>
 <script>
 const ws = new WebSocket(`ws://${location.hostname}:4000`);
 function send(cmd){ ws.send(JSON.stringify({command:cmd})); }

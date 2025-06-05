@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
+<head>
+<link rel="stylesheet" href="styles/theme.css" />
+</head>
 <body>
-<video id="view" autoplay playsinline style="width:100%;max-width:100%"></video>
-<div id="status" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.5);color:white;padding:4px"></div>
-<progress id="progress-bar" value="0" max="100" style="position:absolute;top:40px;left:10px;width:calc(100% - 20px);display:none"></progress>
+<video id="view" autoplay playsinline class="preview"></video>
+<div id="status" class="overlay"></div>
+<progress id="progress-bar" value="0" max="100" class="progress-bar viewer-progress"></progress>
 <script>
 const video = document.getElementById('view');
 const ws = new WebSocket(`ws://${location.hostname}:3000`);
