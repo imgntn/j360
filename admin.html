@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>J360 Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script type="module" src="./src/j360.ts"></script>
+  <style>
+    body { margin:0; overflow:hidden; }
+    .container { position:fixed; top:0; left:0; width:100%; height:100%; }
+    #controls { position:relative; background:white; padding:8px; text-align:center; }
+    #status { padding:4px; }
+  </style>
+</head>
+<body>
+  <div class="container"></div>
+  <div id="controls">
+    <label>Resolution
+      <select id="resolution">
+        <option>16K</option><option>12K</option><option>8K</option>
+        <option selected>4K</option><option>2K</option><option>1K</option>
+      </select>
+    </label>
+    <label>FPS <input id="fps" type="number" value="60" min="1" step="1"/></label>
+    <label>Stereo <input id="stereo" type="checkbox"/></label>
+    <label>Adaptive <input id="adaptive" type="checkbox"/></label>
+    <label>Min
+      <select id="minRes">
+        <option>1K</option><option>2K</option><option>4K</option>
+        <option>8K</option><option>12K</option><option>16K</option>
+      </select>
+    </label>
+    <label>Max
+      <select id="maxRes">
+        <option>1K</option><option>2K</option><option>4K</option>
+        <option selected>8K</option><option>12K</option><option>16K</option>
+      </select>
+    </label>
+    <label>Codec
+      <select id="codec">
+        <option value="vp9">VP9</option>
+        <option value="av1">AV1</option>
+        <option value="h264" selected>H264</option>
+      </select>
+    </label>
+    <label>Mode
+      <select id="mode">
+        <option value="ccapture">CCapture</option>
+        <option value="webm">WebM</option>
+        <option value="webcodecs" selected>WebCodecs</option>
+        <option value="wasm">ffmpeg.wasm</option>
+      </select>
+    </label>
+    <label>Stream <input id="stream" type="checkbox"/></label>
+    <label>HLS <input id="hls" type="checkbox"/></label>
+    <label>RTMP <input id="rtmp" type="checkbox"/></label>
+    <button onclick="startCapture()">Start</button>
+    <button onclick="stopCapture()">Stop</button>
+  </div>
+  <div id="status">Idle</div>
+  <script>
+    let currentMode = '';
+    function startCapture() {
+      const resSel = document.getElementById('resolution');
+      const fpsInput = document.getElementById('fps');
+      const stereo = document.getElementById('stereo').checked;
+      const adaptive = document.getElementById('adaptive').checked;
+      const minRes = document.getElementById('minRes').value;
+      const maxRes = document.getElementById('maxRes').value;
+      const codec = document.getElementById('codec').value;
+      const mode = document.getElementById('mode').value;
+      const stream = document.getElementById('stream').checked;
+      const hls = document.getElementById('hls').checked;
+      const rtmp = document.getElementById('rtmp').checked;
+      const fps = parseInt(fpsInput.value, 10) || 60;
+      if (stereo) toggleStereo();
+      if (adaptive) { toggleAdaptive(); setAdaptiveRange(minRes, maxRes); }
+      if (stream) startStreaming('http://localhost:3000');
+      if (hls) startHLS('http://localhost:8000');
+      if (rtmp) startRTMP('http://localhost:8001');
+      if (mode === 'webm') { startWebMRecording(fps, true); currentMode = 'webm'; }
+      else if (mode === 'webcodecs') { startWebCodecsRecording(fps, true, codec); currentMode = 'webcodecs'; }
+      else if (mode === 'wasm') { startWasmRecording(fps, false, true, undefined, false, codec); currentMode = 'wasm'; }
+      else { startCapture360(); currentMode = 'ccapture'; }
+      document.getElementById('status').textContent = 'Recording...';
+    }
+    async function stopCapture() {
+      if (currentMode === 'webm') { await stopWebMRecording(); }
+      else if (currentMode === 'webcodecs') { await stopWebCodecsRecording(); }
+      else if (currentMode === 'wasm') {
+        const buf = await stopWasmRecordingForCli();
+        if (buf) {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([buf], {type:'video/mp4'}));
+          a.download = 'capture.mp4';
+          a.style.display = 'none';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+      } else { stopCapture360(); }
+      stopStreaming(); stopHLS(); stopRTMP();
+      currentMode = '';
+      document.getElementById('status').textContent = 'Idle';
+    }
+  </script>
+</body>
+</html>
